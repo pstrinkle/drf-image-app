@@ -1,6 +1,9 @@
 *.sqlite3
 .idea
 api/images/
+bower_components/
+
+########
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
