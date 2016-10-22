@@ -17,6 +17,7 @@ Including another URLconf
 from django.conf.urls import url, include
 from rest_framework import routers
 from rest_framework_nested import routers as nrouters
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from image_app.views import user
 from image_app.views import image
@@ -41,3 +42,9 @@ urlpatterns = [
 
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
+
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns += staticfiles_urlpatterns()
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
