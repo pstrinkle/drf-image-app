@@ -19,6 +19,7 @@
     "angular": "angularjs#^1.5.8",
     "bootstrap": "^3.3.7",
     "angular-resource": "^1.5.8",
-    "angular-deckgrid": "^0.5.0"
+    "angular-deckgrid": "^0.5.0",
+    "angular-upload": "^1.0.12"
   }
 }

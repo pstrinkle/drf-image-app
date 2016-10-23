@@ -45,6 +45,7 @@ urlpatterns = [
     ])),
 
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'auth/', include('knox.urls')),
 
     # pass everything else through to Angular
     url('^.*$', views.IndexView.as_view(), name='index'),
