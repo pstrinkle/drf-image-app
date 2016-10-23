@@ -3,22 +3,26 @@ from image_app.models import ImageUser
 from image_app.tests.testutil import BasicImageTest
 
 
-class ImageUserListTests(BasicImageTest):
+class LabelCreateTests(BasicImageTest):
 
     def setUp(self):
         self.superuser = ImageUser.objects.create_superuser('admin', 'jon@snow.com', self.PW)
         self.login(username='admin')
         self.logout()
 
-    def test_superuser_can_list_users(self):
+    def test_superuser_can_create_label(self):
         """
         Verify you can list all users.
         """
 
+        label = {
+            'value': 'label value!'
+        }
+
         self.login(username='admin')
-        response = self.client.get('/api/v1/user')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        response = self.client.post('/api/v1/label', label)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.verify_built(label, response.data)
         self.logout()
 
 

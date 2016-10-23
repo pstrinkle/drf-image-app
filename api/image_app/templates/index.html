@@ -1,0 +1,72 @@
+{% load staticfiles %}
+
+<!doctype html>
+<html lang="en" ng-app="image_app">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Bootstrap 101 Template</title>
+
+    <!-- Bootstrap -->
+    <link href="{% static 'bower_components/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet">
+    <style>
+    .deckgrid[deckgrid]::before {
+        /* Specifies that the grid should have a maximum of 4 columns. Each column will have the classes 'column' and 'column-1-4' */
+        content: '4 .column.column-1-4';
+        font-size: 0; /* See https://github.com/akoenig/angular-deckgrid/issues/14#issuecomment-35728861 */
+        visibility: hidden;
+    }
+
+    .deckgrid .column { float: left; }
+    .deckgrid .column-1-4 { width: 25%; }
+
+    .deckgrid .column-1-1 { width: 100%; }
+
+    @media screen and (max-width: 480px){
+        .deckgrid[deckgrid]::before { content: '1 .column.column-1-1'; }
+    }
+    </style>
+    <link href="{% static 'bower_components/angular-upload/src/directives/btnUpload.min.css' %}" rel="stylesheet">
+</head>
+<body>
+    {% verbatim %}
+    <div class="container" ng-app>
+        <p>Nothing here {{'yet' + '!'}}</p>
+    </div>
+
+    <div>
+        <a href="/login.html">login form.</a>
+    </div>
+
+    <div ng-controller="uploadCtrl">
+        <form name="myForm" ng-submit="doUpload()">
+            <input name="myFile" type="file" />
+            <!-- <div class="btn btn-primary btn-upload" upload-button>Fileupload</div> -->
+            <input type="submit" value='Submit' />
+        </form>
+    </div>
+
+    <div ng-controller="photoCtrl">
+        <div deckgrid class="deckgrid" source="photos">
+            <div class="a-card">
+                <h1>{{card.title}}</h1>
+                <img src="" data-ng-src="{{card.src}}">
+            </div>
+        </div>
+    </div>
+    {% endverbatim %}
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="{% static 'bower_components/bootstrap/dist/js/bootstrap.min.js' %}"></script>
+
+    <script src="{% static 'bower_components/angular/angular.min.js' %}"></script>
+    <script src="{% static 'bower_components/angular-resource/angular-resource.min.js' %}"></script>
+    <script src="{% static 'bower_components/angular-upload/angular-upload.min.js' %}"></script>
+    <script src="{% static 'bower_components/angular-deckgrid/angular-deckgrid.js' %}"></script>
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

@@ -19,6 +19,10 @@ from rest_framework import routers
 from rest_framework_nested import routers as nrouters
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
+from django.conf import settings
+from django.conf.urls.static import static
+
+from image_app import views
 from image_app.views import user
 from image_app.views import image
 from image_app.views.image import label as i_label
@@ -40,11 +44,13 @@ urlpatterns = [
         url(r'^', include(label_router.urls)),
     ])),
 
-    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'auth/', include('knox.urls')),
+
+    # pass everything else through to Angular
+    url('^.*$', views.IndexView.as_view(), name='index'),
 ]
 
-from django.conf import settings
-from django.conf.urls.static import static
-
-urlpatterns += staticfiles_urlpatterns()
+#urlpatterns += staticfiles_urlpatterns()
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
