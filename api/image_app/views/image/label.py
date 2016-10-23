@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
+from image_app.serializers import ImageSerializer
 from image_app.models import Label, Image
 
 
@@ -22,7 +23,7 @@ class LabelViewSet(viewsets.ModelViewSet):
         image.labels.add(label)
         image.save()  # may not be a necessary step.
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(ImageSerializer(image, context={'request': request}).data, status=status.HTTP_202_ACCEPTED)
 
     def destroy(self, request, pk=None, image_pk=None, **kwargs):
         """
@@ -35,4 +36,4 @@ class LabelViewSet(viewsets.ModelViewSet):
         image.labels.remove(label)
         image.save()
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(ImageSerializer(image, context={'request': request}).data, status=status.HTTP_202_ACCEPTED)

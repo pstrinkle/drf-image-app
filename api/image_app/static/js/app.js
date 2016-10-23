@@ -13,7 +13,7 @@ ImgApp.config(function($locationProvider) {
 */
 });
 
-var listLabels = function($http) {
+var listLabels = function($scope, $http) {
     $http({
         url: '/api/v1/label',
         method: 'GET',
@@ -21,7 +21,9 @@ var listLabels = function($http) {
         console.log('list labels.response: ' + JSON.stringify(response));
 
         angular.forEach(response.data, function(element, index) {
-            console.log('label: ' + element.value)
+            console.log('label: ' + element.value);
+
+            $scope.addLabel(element.value, element.id);
         });
 
     }, function error(data) {
@@ -30,7 +32,7 @@ var listLabels = function($http) {
     });
 }
 
-var listImages = function($rootScope, $http) {
+var listImages = function($scope, $http) {
     $http({
         url: '/api/v1/image',
         method: 'GET',
@@ -39,10 +41,43 @@ var listImages = function($rootScope, $http) {
 
         // temp code.
         angular.forEach(response.data, function(element, index) {
-            console.log('url: ' + element.file)
-            $rootScope.photos.push({'id': element.id, 'src': element.file});
+            $scope.addImage(element.id, element.file, element.labels);
         });
 
+    }, function error(data) {
+        console.log(data);
+        console.log('error returned!');
+    });
+}
+
+var filterImages = function($scope, $http) {
+    $http({
+        url: '/api/v1/image',
+        method: 'GET',
+        params: {labels: $scope.selected},
+    }).then(function success(response) {
+        console.log('list images.response: ' + JSON.stringify(response));
+
+        // temp code.
+        angular.forEach(response.data, function(element, index) {
+            $scope.addImage(element.id, element.file, element.labels);
+        });
+
+    }, function error(data) {
+        console.log(data);
+        console.log('error returned!');
+    });
+}
+
+var addLabelToImage = function($scope, $http, image_id, label_id) {
+    /* can I update the image in the photos directly? */
+
+    $http({
+        url: '/api/v1/image/' + image_id + '/label/' + label_id,
+        method: 'PUT',
+    }).then(function success(response) {
+        console.log('image+label response: ' + JSON.stringify(response));
+        // temp code.
     }, function error(data) {
         console.log(data);
         console.log('error returned!');
@@ -54,8 +89,46 @@ ImgApp.run(function($rootScope, $http) {
     $rootScope.loggedin = false;
 
     $rootScope.photos = [];
+    $rootScope.labelLookup = {};
+    $rootScope.labels = [];
+    $rootScope.selected = []; // used for filtering the images.
 
-    console.log('scope length: ' + $rootScope.photos.length)
+    $rootScope.addLabel = function(label, id) {
+        $rootScope.labels.push(label);
+        $rootScope.labelLookup[label] = id;
+    }
+
+    $rootScope.addImage = function(id, src, labels) {
+        $rootScope.photos.push({'id': id, 'src': src, 'labels': labels})
+    }
+
+    $rootScope.addFilter = function(filter) {
+        $rootScope.selected.push(filter); // add to selection.
+        for (var i = 0; i < $rootScope.labels.length; i++) {
+            if ($rootScope.labels[i] === filter) {
+                $rootScope.labels.splice(i, 1);
+                break;
+            }
+        }
+
+        /* this isn't the most efficient. */
+        $rootScope.photos = [];
+        filterImages($rootScope, $http);
+    }
+
+    $rootScope.delFilter = function(filter) {
+        $rootScope.labels.push(filter); // add to selection.
+        for (var i = 0; i < $rootScope.selected.length; i++) {
+            if ($rootScope.selected[i] === filter) {
+                $rootScope.selected.splice(i, 1);
+                break;
+            }
+        }
+
+        /* this isn't the most efficient. */
+        $rootScope.photos = [];
+        filterImages($rootScope, $http);
+    }
 
     $rootScope.setToken = function(token) {
         if (token) {
@@ -85,12 +158,9 @@ ImgApp.run(function($rootScope, $http) {
     $rootScope.setToken(localStorage.getItem('token'));
     $rootScope.setUser(JSON.parse(localStorage.getItem('user')));
 
-    /* test the user's credentials. */
+    /* Test the user's credentials and initialize the lists. */
     if ($rootScope.token && $rootScope.user) {
         var id = $rootScope.user.id;
-
-        console.log('user: ' + JSON.stringify($rootScope.user));
-        console.log('id: ' + id);
 
         $http({
             url: '/api/v1/user/' + id,
@@ -100,8 +170,10 @@ ImgApp.run(function($rootScope, $http) {
 
             $rootScope.loggedin = true;
 
+            jQuery('#loginformarea').slideUp();
+
             // they loaded logged in, so let's load everything to start with.
-            listLabels($http);
+            listLabels($rootScope, $http);
             listImages($rootScope, $http);
 
         }, function error(data) {
@@ -110,6 +182,100 @@ ImgApp.run(function($rootScope, $http) {
         });
     }
 });
+
+ImgApp.controller('subordinate', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
+
+    $scope.linkLabel = function(e) {
+        var id = jQuery(e.target).attr('id');
+        console.log('clicked ' + id);
+
+        var label = jQuery('#input_' + id).val();
+        console.log('label ' + label + ' ' + ' image id: ' + id);
+
+        if (label && label.length > 0) {
+            if ($rootScope.labelLookup[label] == undefined) {
+                console.log('brand new label!');
+            } else {
+                console.log('label id: ' + $rootScope.labelLookup[label]);
+
+                addLabelToImage($rootScope, $http, id, $rootScope.labelLookup[label]);
+            }
+        }
+    }
+}]);
+
+ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', 'Upload', function($rootScope, $scope, $http, Upload) {
+
+    $scope.createLabel = function() {
+        $http({
+            url: 'api/v1/label',
+            method: 'POST',
+            data: {value: $scope.newLabel}
+        }).then(function success(resp) {
+            console.log('successfully created label: ' + JSON.stringify(resp.data));
+
+            $scope.addLabel(resp.data.value, resp.data.id);
+
+        }, function error(resp) {
+            console.log('failed to create label: ' + JSON.stringify(resp.data));
+        });
+    }
+
+    $scope.selectLabel = function(e) {
+        console.log('clicked', $(e.target).text());
+        var filter = $(e.target).text();
+        $scope.addFilter(filter);
+    }
+
+    $scope.deselectLabel = function(e) {
+        console.log('clicked', $(e.target).text());
+        var filter = $(e.target).text();
+        $scope.delFilter(filter);
+    }
+
+
+
+    // upload on file select or drop
+    $scope.upload = function(file) {
+        if (!file) {
+            return false;
+        }
+
+        Upload.upload({
+            url: 'api/v1/image',
+            data: {file: file}
+        }).then(function(resp) {
+            console.log('Success ' + resp.config.data.file.name + ' uploaded. Response: ' + JSON.stringify(resp.data));
+            /* XXX: There's no guarantee the image would show up given the filter of selected. */
+            /* XXX: Since you can't upload an image with labels... if any are selected, this can't show up. */
+            $scope.addImage(resp.data.id, resp.data.file, resp.data.labels);
+        }, function(resp) {
+            console.log('Error status: ' + resp.status);
+        }, function(evt) {
+            var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+            console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+        });
+    };
+
+    // for multiple files:
+    $scope.uploadFiles = function(files) {
+        if (files && files.length) {
+            for (var i = 0; i < files.length; i++) {
+                Upload.upload({
+                    url: 'api/v1/image',
+                    data: {file: files[i]}
+                }).then(function(resp) {
+                    console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
+                }, function(resp) {
+                    console.log('Error status: ' + resp.status);
+                }, function(evt) {
+                    var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+                    console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+                });
+            }
+        }
+    }
+}]);
 
 ImgApp.controller('loginCtrl', function($rootScope, $scope, $http) {
 
@@ -157,59 +323,6 @@ ImgApp.controller('loginCtrl', function($rootScope, $scope, $http) {
         });
     }
 });
-
-ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', 'Upload', function($rootScope, $scope, $http, Upload) {
-
-    $scope.createlbl = function() {
-        $http({
-            url: 'api/v1/label',
-            method: 'POST',
-            data: {value: $scope.newLabel}
-        }).then(function success(resp) {
-            console.log('successfully created label: ' + JSON.stringify(resp.data));
-        }, function error(resp) {
-            console.log('failed to create label: ' + JSON.stringify(resp.data));
-        });
-    }
-
-    // upload on file select or drop
-    $scope.upload = function(file) {
-        if (!file) {
-            return false;
-        }
-
-        Upload.upload({
-            url: 'api/v1/image',
-            data: {file: file}
-        }).then(function(resp) {
-            console.log('Success ' + resp.config.data.file.name + ' uploaded. Response: ' + JSON.stringify(resp.data));
-        }, function(resp) {
-            console.log('Error status: ' + resp.status);
-        }, function(evt) {
-            var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
-            console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
-        });
-    };
-
-    // for multiple files:
-    $scope.uploadFiles = function(files) {
-        if (files && files.length) {
-            for (var i = 0; i < files.length; i++) {
-                Upload.upload({
-                    url: 'api/v1/image',
-                    data: {file: files[i]}
-                }).then(function(resp) {
-                    console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
-                }, function(resp) {
-                    console.log('Error status: ' + resp.status);
-                }, function(evt) {
-                    var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
-                    console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
-                });
-            }
-        }
-    }
-}]);
 
 //https://richardtier.com/2014/03/15/authenticate-using-django-rest-framework-endpoint-and-angularjs/
 //https://github.com/akoenig/angular-deckgrid

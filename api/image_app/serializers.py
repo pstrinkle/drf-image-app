@@ -12,7 +12,16 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     RW Image serializer.
     """
 
-    labels = PrimaryKeyRelatedField(many=True, read_only=True)
+    #labels = PrimaryKeyRelatedField(many=True, read_only=True)
+    labels = serializers.SerializerMethodField(read_only=True)
+
+    def get_labels(self, obj):
+        """
+        Get the labels themselves.
+        """
+
+        qs = Label.objects.filter(pk__in=obj.labels.all())
+        return list(qs.values_list('value', flat=True))
 
     def create(self, validated_data):
         validated_data['size'] = validated_data['file'].size

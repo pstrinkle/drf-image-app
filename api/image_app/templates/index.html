@@ -32,10 +32,10 @@
 <body>
     {% verbatim %}
 
-    <br />
-
     <!-- login form area -->
     <div id="loginformarea" class="container">
+        <br />
+
         <div class="col-md-6">
             <div class="ibox-content">
                 <div ng-controller="loginCtrl">
@@ -51,38 +51,57 @@
                 </div>
             </div>
         </div>
+
+        <br />
+        <br />
     </div>
 
-    <br />
-    <br />
-
     <div ng-controller="photoCtrl">
+
+        <div class="jumbotron">
+            <div class="container">
+                <h1>Photo Organizer</h1>
+            </div>
+        </div>
 
         <!-- Create new things controls -->
         <div class="container">
             <div class="col-md-6">
-                <form class="m-t" role="form" ng-submit="createlbl()">
+                <form class="m-t" role="form" ng-submit="createLabel()">
                     <div class="form-group">
                         <input type="text" ng-model="newLabel" class="form-control" placeholder="New Label" />
                     </div>
                     <button type="submit" class="btn btn-primary">create</button>
                 </form>
             </div>
-        </div>
-
-        <br />
-        <br />
-
-        <div class="container">
             <div class="col-md-6">
-                <div class="button" ngf-select="upload($file)">Upload on file select</div>
-                <div class="button" ngf-select="uploadFiles($files)" multiple="multiple">Upload on multiple files select</div>
+                <div class="btn btn-primary button" ngf-select="upload($file)">Upload on file select</div>
+                <div class="btn btn-primary button" ngf-select="uploadFiles($files)" multiple="multiple">Upload on multiple files select</div>
             </div>
         </div>
+
+        <br />
+        <br />
 
         <!-- list of all labels in the system -->
         <div class="container">
             <div class="col-md-12">
+                <h3>Available Labels {{labels.length}}</h3>
+                <ul>
+                    <li ng-repeat="label in labels" ng-click="selectLabel($event)">{{label}}</li>
+                </ul>
+            </div>
+        </div>
+
+        <br />
+
+        <!-- list of all selected labels. -->
+        <div class="container">
+            <div class="col-md-12">
+                <h3>Selected Labels {{selected.length}}</h3>
+                <ul>
+                    <li ng-repeat="label in selected" ng-click="deselectLabel($event)">{{label}}</li>
+                </ul>
             </div>
         </div>
 
@@ -93,13 +112,26 @@
             <div class="col-md-12">
                 <div deckgrid class="deckgrid" source="photos">
                     <div class="a-card">
-                        <h1>{{card.id}}</h1>
+                        <h5>{{card.labels}}</h5>
                         <img style="max-width: 200px; max-height: 200px;" src="" data-ng-src="{{card.src}}">
+
+                        <div ng-controller="subordinate">
+                            <form id="{{card.id}}" ng-submit="linkLabel($event)">
+                                <div class="form-group">
+                                    <input id="input_{{card.id}}" type="text" class="form-control" style="display:inline-block; max-width: 160px;" />
+                                    <button id="btn_{{card.id}}"><strong>+</strong></button>
+                                    <!-- ng-click="linkLabel($event)" -->
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <br />
+    <br />
     {% endverbatim %}
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
