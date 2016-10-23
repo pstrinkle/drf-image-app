@@ -1,7 +1,7 @@
 
 var ImgApp = angular.module('image_app', [
     'akoenig.deckgrid',
-    'lr.upload'
+    'ngFileUpload',
 ]);
 
 ImgApp.config(function($locationProvider) {
@@ -13,9 +13,49 @@ ImgApp.config(function($locationProvider) {
 */
 });
 
+var listLabels = function($http) {
+    $http({
+        url: '/api/v1/label',
+        method: 'GET',
+    }).then(function success(response) {
+        console.log('list labels.response: ' + JSON.stringify(response));
+
+        angular.forEach(response.data, function(element, index) {
+            console.log('label: ' + element.value)
+        });
+
+    }, function error(data) {
+        console.log(data);
+        console.log('error returned!');
+    });
+}
+
+var listImages = function($rootScope, $http) {
+    $http({
+        url: '/api/v1/image',
+        method: 'GET',
+    }).then(function success(response) {
+        console.log('list images.response: ' + JSON.stringify(response));
+
+        // temp code.
+        angular.forEach(response.data, function(element, index) {
+            console.log('url: ' + element.file)
+            $rootScope.photos.push({'id': element.id, 'src': element.file});
+        });
+
+    }, function error(data) {
+        console.log(data);
+        console.log('error returned!');
+    });
+}
+
 ImgApp.run(function($rootScope, $http) {
 
     $rootScope.loggedin = false;
+
+    $rootScope.photos = [];
+
+    console.log('scope length: ' + $rootScope.photos.length)
 
     $rootScope.setToken = function(token) {
         if (token) {
@@ -57,7 +97,13 @@ ImgApp.run(function($rootScope, $http) {
             method: 'GET',
         }).then(function success(response) {
             console.log('response: ' + JSON.stringify(response));
+
             $rootScope.loggedin = true;
+
+            // they loaded logged in, so let's load everything to start with.
+            listLabels($http);
+            listImages($rootScope, $http);
+
         }, function error(data) {
             console.log(data);
             console.log('error returned!');
@@ -112,32 +158,58 @@ ImgApp.controller('loginCtrl', function($rootScope, $scope, $http) {
     }
 });
 
-ImgApp.controller('photoCtrl', function($scope) {
-    $scope.photos = [
-        {id: 'p1', 'title': 'A nice day!', src: "http://lorempixel.com/300/400/"},
-        {id: 'p2', 'title': 'Puh!', src: "http://lorempixel.com/300/400/sports"},
-        {id: 'p3', 'title': 'What a club!', src: "http://lorempixel.com/300/400/nightlife"}
-    ];
-});
+ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', 'Upload', function($rootScope, $scope, $http, Upload) {
 
-ImgApp.controller('uploadCtrl', function($scope, upload) {
-    $scope.doUpload = function() {
-        upload({
-            url: '/api/v1/image',
+    $scope.createlbl = function() {
+        $http({
+            url: 'api/v1/label',
             method: 'POST',
-            data: {
-                file: $scope.myFile, // a jqLite type="file" element, upload() will extract all the files from the input and put them into the FormData object before sending.
-            }
-        }).then(
-            function(response) {
-                console.log(response.data); // will output whatever you choose to return from the server on a successful upload
-            },
-            function(response) {
-                console.error(response); //  Will return if status code is above 200 and lower than 300, same as $http
-            }
-        );
+            data: {value: $scope.newLabel}
+        }).then(function success(resp) {
+            console.log('successfully created label: ' + JSON.stringify(resp.data));
+        }, function error(resp) {
+            console.log('failed to create label: ' + JSON.stringify(resp.data));
+        });
     }
-});
+
+    // upload on file select or drop
+    $scope.upload = function(file) {
+        if (!file) {
+            return false;
+        }
+
+        Upload.upload({
+            url: 'api/v1/image',
+            data: {file: file}
+        }).then(function(resp) {
+            console.log('Success ' + resp.config.data.file.name + ' uploaded. Response: ' + JSON.stringify(resp.data));
+        }, function(resp) {
+            console.log('Error status: ' + resp.status);
+        }, function(evt) {
+            var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+            console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+        });
+    };
+
+    // for multiple files:
+    $scope.uploadFiles = function(files) {
+        if (files && files.length) {
+            for (var i = 0; i < files.length; i++) {
+                Upload.upload({
+                    url: 'api/v1/image',
+                    data: {file: files[i]}
+                }).then(function(resp) {
+                    console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
+                }, function(resp) {
+                    console.log('Error status: ' + resp.status);
+                }, function(evt) {
+                    var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+                    console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+                });
+            }
+        }
+    }
+}]);
 
 //https://richardtier.com/2014/03/15/authenticate-using-django-rest-framework-endpoint-and-angularjs/
 //https://github.com/akoenig/angular-deckgrid

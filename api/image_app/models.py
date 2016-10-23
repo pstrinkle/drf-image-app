@@ -21,7 +21,7 @@ class Image(models.Model):
 
     size = models.IntegerField(default=0)
     # How we track stored images.
-    file = models.ImageField(upload_to='images')
+    file = models.ImageField()
 
     # How we connect labels / tags / people
     labels = models.ManyToManyField('Label', related_name='images')
