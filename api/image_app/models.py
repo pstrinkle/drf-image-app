@@ -32,5 +32,5 @@ class Label(models.Model):
     These are how we tag images.
     """
 
-    value = models.CharField(max_length=256)
+    value = models.CharField(max_length=256, unique=True)
 
