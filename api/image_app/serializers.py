@@ -66,5 +66,12 @@ class ImageUserSerializer(serializers.HyperlinkedModelSerializer):
         write_only_fields = ('password',)
 
 
+class LoginUserSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Login output serializer.
+    """
 
+    class Meta:
+        model = apps.get_model('image_app.ImageUser')
+        fields = ('email', 'username', 'first_name', 'last_name', 'id')
 

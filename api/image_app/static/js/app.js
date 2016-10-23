@@ -1,36 +1,118 @@
 
-function b64EncodeUnicode(str) {
-    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
-        return String.fromCharCode('0x' + p1);
-    }));
-}
-
 var ImgApp = angular.module('image_app', [
     'akoenig.deckgrid',
     'lr.upload'
 ]);
 
-ImgApp.controller('loginCtrl', function ($scope, $http) {
-    function success(response) {
-        console.log('Logged in!', new Date());
+ImgApp.config(function($locationProvider) {
+/*
+    $locationProvider.html5Mode({
+        enabled: true,
+        requireBase: false
+    });
+*/
+});
+
+ImgApp.run(function($rootScope, $http) {
+
+    $rootScope.loggedin = false;
+
+    $rootScope.setToken = function(token) {
+        if (token) {
+            $rootScope.token = token;
+            localStorage.setItem('token', token);
+            $http.defaults.headers.common['Authorization'] = "Token " + token;
+        }
+    };
+
+    $rootScope.clearAuth = function() {
+        delete $rootScope.token;
+        localStorage.removeItem('token');
+        delete $http.defaults.headers.common['Authorization'];
+
+        delete $rootScope.user;
+        localStorage.removeItem('user');
     }
 
-    function error(data) {
-        console.log(data);
+    $rootScope.setUser = function(user) {
+        if (user) {
+            $rootScope.user = user;
+            localStorage.setItem('user', JSON.stringify(user));
+        }
     }
 
-    $scope.login = function (u, p, success, error) {
+    /* XXX: wrap in try/catch */
+    $rootScope.setToken(localStorage.getItem('token'));
+    $rootScope.setUser(JSON.parse(localStorage.getItem('user')));
+
+    /* test the user's credentials. */
+    if ($rootScope.token && $rootScope.user) {
+        var id = $rootScope.user.id;
+
+        console.log('user: ' + JSON.stringify($rootScope.user));
+        console.log('id: ' + id);
+
+        $http({
+            url: '/api/v1/user/' + id,
+            method: 'GET',
+        }).then(function success(response) {
+            console.log('response: ' + JSON.stringify(response));
+            $rootScope.loggedin = true;
+        }, function error(data) {
+            console.log(data);
+            console.log('error returned!');
+        });
+    }
+});
+
+ImgApp.controller('loginCtrl', function($rootScope, $scope, $http) {
+
+    function b64EncodeUnicode(str) {
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+            return String.fromCharCode('0x' + p1);
+        }));
+    }
+
+    $scope.login = function() {
+        var u = $scope.username;
+        var p = $scope.password;
+
+        console.log('login with: ' + u + ', password: ' + p);
+
         $http({
             url: '/auth/login/',
             method: 'POST',
             headers: {
                 'Authorization': 'Basic ' + b64EncodeUnicode(u + ':' + p)
             }
-        }).then(success, error);
+        }).then(function success(response) {
+            console.log('Logged in!', new Date());
+            console.log('response: ' + JSON.stringify(response));
+
+            $rootScope.loggedin = true;
+            $rootScope.setUser(response.data.user);
+            $rootScope.setToken(response.data.token);
+        }, function error(data) {
+            console.log(data);
+            console.log('error returned!');
+        });
+    }
+
+    $scope.logout = function() {
+        $http({
+            url: '/auth/logout/',
+            method: 'POST'
+        }).then(function success(res) {
+            console.log(['successfully logged out', res]);
+            //$rootScope.loginEvaluated = false;
+            $rootScope.clearAuth();
+        }, function error(res) {
+            console.log(['failed to log out', res]);
+        });
     }
 });
 
-ImgApp.controller('photoCtrl', function ($scope) {
+ImgApp.controller('photoCtrl', function($scope) {
     $scope.photos = [
         {id: 'p1', 'title': 'A nice day!', src: "http://lorempixel.com/300/400/"},
         {id: 'p2', 'title': 'Puh!', src: "http://lorempixel.com/300/400/sports"},
@@ -38,8 +120,8 @@ ImgApp.controller('photoCtrl', function ($scope) {
     ];
 });
 
-ImgApp.controller('uploadCtrl', function ($scope, upload) {
-    $scope.doUpload = function () {
+ImgApp.controller('uploadCtrl', function($scope, upload) {
+    $scope.doUpload = function() {
         upload({
             url: '/api/v1/image',
             method: 'POST',
@@ -47,10 +129,10 @@ ImgApp.controller('uploadCtrl', function ($scope, upload) {
                 file: $scope.myFile, // a jqLite type="file" element, upload() will extract all the files from the input and put them into the FormData object before sending.
             }
         }).then(
-            function (response) {
+            function(response) {
                 console.log(response.data); // will output whatever you choose to return from the server on a successful upload
             },
-            function (response) {
+            function(response) {
                 console.error(response); //  Will return if status code is above 200 and lower than 300, same as $http
             }
         );
