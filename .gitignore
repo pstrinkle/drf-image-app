@@ -1,6 +1,7 @@
 *.sqlite3
 .idea
-api/images/
+images/
+api/image_app/media/
 bower_components/
 
 ########

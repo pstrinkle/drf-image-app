@@ -15,6 +15,7 @@ Including another URLconf
 """
 
 from django.conf.urls import url, include
+#from django.conf.urls.defaults import patterns
 from rest_framework import routers
 from rest_framework_nested import routers as nrouters
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -47,10 +48,17 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'auth/', include('knox.urls')),
 
+    url(r'^media/.*$', views.ImageView.as_view(), name='media'),
     # pass everything else through to Angular
     url('^.*$', views.IndexView.as_view(), name='index'),
 ]
 
+# + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+#urlpatterns += patterns('', (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}))
+
 #urlpatterns += staticfiles_urlpatterns()
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+#urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+#url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
+
