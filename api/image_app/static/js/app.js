@@ -4,7 +4,18 @@ var ImgApp = angular.module('image_app', [
     'lr.upload'
 ]);
 
-ImgApp.run(function ($rootScope, $http) {
+ImgApp.config(function($locationProvider) {
+/*
+    $locationProvider.html5Mode({
+        enabled: true,
+        requireBase: false
+    });
+*/
+});
+
+ImgApp.run(function($rootScope, $http) {
+
+    $rootScope.loggedin = false;
 
     $rootScope.setToken = function(token) {
         if (token) {
@@ -26,15 +37,35 @@ ImgApp.run(function ($rootScope, $http) {
     $rootScope.setUser = function(user) {
         if (user) {
             $rootScope.user = user;
-            localStorage.setItem('user', user);
+            localStorage.setItem('user', JSON.stringify(user));
         }
     }
 
+    /* XXX: wrap in try/catch */
     $rootScope.setToken(localStorage.getItem('token'));
-    $rootScope.setUser(localStorage.getItem('user'));
+    $rootScope.setUser(JSON.parse(localStorage.getItem('user')));
+
+    /* test the user's credentials. */
+    if ($rootScope.token && $rootScope.user) {
+        var id = $rootScope.user.id;
+
+        console.log('user: ' + JSON.stringify($rootScope.user));
+        console.log('id: ' + id);
+
+        $http({
+            url: '/api/v1/user/' + id,
+            method: 'GET',
+        }).then(function success(response) {
+            console.log('response: ' + JSON.stringify(response));
+            $rootScope.loggedin = true;
+        }, function error(data) {
+            console.log(data);
+            console.log('error returned!');
+        });
+    }
 });
 
-ImgApp.controller('loginCtrl', function ($rootScope, $scope, $http) {
+ImgApp.controller('loginCtrl', function($rootScope, $scope, $http) {
 
     function b64EncodeUnicode(str) {
         return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
@@ -56,6 +87,9 @@ ImgApp.controller('loginCtrl', function ($rootScope, $scope, $http) {
             }
         }).then(function success(response) {
             console.log('Logged in!', new Date());
+            console.log('response: ' + JSON.stringify(response));
+
+            $rootScope.loggedin = true;
             $rootScope.setUser(response.data.user);
             $rootScope.setToken(response.data.token);
         }, function error(data) {

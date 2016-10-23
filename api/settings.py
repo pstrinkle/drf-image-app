@@ -44,7 +44,11 @@ INSTALLED_APPS = [
 
 #     'django.contrib.sites',
 
-SITE_ID = 1
+#SITE_ID = 1
+
+REST_KNOX = {
+  'USER_SERIALIZER': 'image_app.serializers.LoginUserSerializer',
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
