@@ -84,6 +84,29 @@ var addLabelToImage = function($scope, $http, image_id, label_id) {
     });
 }
 
+var createNewLabel = function($scope, $http, label) {
+    $http({
+        url: 'api/v1/label',
+        method: 'POST',
+        data: {value: label}
+    }).then(function success(resp) {
+        console.log('successfully created label: ' + JSON.stringify(resp.data));
+
+        $scope.addLabel(resp.data.value, resp.data.id);
+
+    }, function error(resp) {
+        console.log('failed to create label: ' + JSON.stringify(resp.data));
+    });
+}
+
+var loggedinInit = function($scope, $http) {
+    jQuery('#loginformarea').slideUp();
+
+    // they loaded logged in, so let's load everything to start with.
+    listLabels($scope, $http);
+    listImages($scope, $http);
+}
+
 ImgApp.run(function($rootScope, $http) {
 
     $rootScope.loggedin = false;
@@ -92,6 +115,7 @@ ImgApp.run(function($rootScope, $http) {
     $rootScope.labelLookup = {};
     $rootScope.labels = [];
     $rootScope.selected = []; // used for filtering the images.
+    $rootScope.downloadSelection = {};
 
     $rootScope.addLabel = function(label, id) {
         $rootScope.labels.push(label);
@@ -170,12 +194,7 @@ ImgApp.run(function($rootScope, $http) {
 
             $rootScope.loggedin = true;
 
-            jQuery('#loginformarea').slideUp();
-
-            // they loaded logged in, so let's load everything to start with.
-            listLabels($rootScope, $http);
-            listImages($rootScope, $http);
-
+            loggedinInit($rootScope, $http);
         }, function error(data) {
             console.log(data);
             console.log('error returned!');
@@ -187,24 +206,37 @@ ImgApp.controller('subordinate', ['$rootScope', '$scope', '$http', function($roo
 
     $scope.linkLabel = function(e) {
         var id = jQuery(e.target).attr('id');
-        console.log('clicked ' + id);
+        console.log('clicked: ' + id);
 
         var label = jQuery('#input_' + id).val();
         console.log('label ' + label + ' ' + ' image id: ' + id);
 
         if (label && label.length > 0) {
-            if ($rootScope.labelLookup[label] == undefined) {
-                console.log('brand new label!');
-            } else {
-                console.log('label id: ' + $rootScope.labelLookup[label]);
-
-                addLabelToImage($rootScope, $http, id, $rootScope.labelLookup[label]);
+            labels = label.split(',');
+            for (var i = 0; i < labels.length; i++) {
+                var ll = labels[i].trim();
+                if ($rootScope.labelLookup[ll] == undefined) {
+                    console.log('brand new label!');
+                } else {
+                    addLabelToImage($rootScope, $http, id, $rootScope.labelLookup[ll]);
+                }
             }
+        }
+    }
+
+    $scope.selectForDownload = function(e) {
+        var id = jQuery(e.target).attr('id').replace('select_', '');
+        console.log('selected for download: ' + id);
+
+        if ($rootScope.downloadSelection[id] == undefined) {
+            $rootScope.downloadSelection[id] = 1;
+        } else {
+            delete $rootScope.downloadSelection[id];
         }
     }
 }]);
 
-ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', 'Upload', function($rootScope, $scope, $http, Upload) {
+ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', '$location', '$window', 'Upload', function($rootScope, $scope, $http, $location, $window, Upload) {
 
     $scope.createLabel = function() {
         $http({
@@ -233,7 +265,17 @@ ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', 'Upload', funct
         $scope.delFilter(filter);
     }
 
+    $scope.download = function() {
+        files = Object.keys($scope.downloadSelection);
+        if (files.length > 0) {
+            var path = $location.protocol() + '://' + $location.host() + ':' + $location.port() + '/api/v1/download';
 
+            path += '?' + jQuery.param({images: files});
+
+            console.log('path: ' + path);
+            $window.open(path, '_blank');
+        }
+    }
 
     // upload on file select or drop
     $scope.upload = function(file) {
@@ -304,6 +346,8 @@ ImgApp.controller('loginCtrl', function($rootScope, $scope, $http) {
             $rootScope.loggedin = true;
             $rootScope.setUser(response.data.user);
             $rootScope.setToken(response.data.token);
+
+            loggedinInit($rootScope, $http);
         }, function error(data) {
             console.log(data);
             console.log('error returned!');

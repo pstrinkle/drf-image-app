@@ -28,11 +28,13 @@ from image_app.views import user
 from image_app.views import image
 from image_app.views.image import label as i_label
 from image_app.views import label
+from image_app.views import download
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register(r'user', user.UserViewSet)
 router.register(r'image', image.ImageViewSet)
 router.register(r'label', label.LabelViewSet)
+router.register(r'download', download.ImageDownloadViewSet)
 
 label_router = nrouters.NestedSimpleRouter(router, r'image', lookup='image', trailing_slash=False)
 label_router.register(r'label', i_label.LabelViewSet, base_name='image-label')
