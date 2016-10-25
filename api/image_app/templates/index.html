@@ -105,9 +105,13 @@
             </div>
         </div>
 
-        <br />
-        <a href="#" ng-click="download()">Download</a>
-        <br />
+        <div class="container">
+            <div class="col-md-12">
+                <br />
+                <a href="#" ng-click="download()">Download</a>
+                <br />
+            </div>
+        </div>
 
         <!-- photo deck area -->
         <div class="container">
@@ -115,7 +119,10 @@
                 <div deckgrid class="deckgrid" source="photos">
                     <div class="a-card">
                         <div ng-controller="subordinate">
-                            <input type="checkbox" id="select_{{card.id}}" ng-click="selectForDownload($event)"/>
+                            <label for="select_{{card.id}}">
+                                <input type="checkbox" id="select_{{card.id}}" ng-click="selectForDownload($event)"/>
+                                select
+                            </label>
                             <h5 data-ng-bind="card.labels"></h5>
                             <img style="max-width: 200px; max-height: 200px;" src="" data-ng-src="{{card.src}}">
                             <form id="{{card.id}}" ng-submit="linkLabel($event)">
@@ -142,9 +149,10 @@
     <script src="{% static 'bower_components/bootstrap/dist/js/bootstrap.min.js' %}"></script>
 
     <script src="{% static 'bower_components/angular/angular.min.js' %}"></script>
+    <script src="{% static 'bower_components/angular-cookies/angular-cookies.min.js' %}"></script>
+    <script src="{% static 'bower_components/angular-deckgrid/angular-deckgrid.js' %}"></script>
     <script src="{% static 'bower_components/angular-resource/angular-resource.min.js' %}"></script>
     <script src="{% static 'bower_components/ng-file-upload/ng-file-upload.min.js' %}"></script>
-    <script src="{% static 'bower_components/angular-deckgrid/angular-deckgrid.js' %}"></script>
     <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

@@ -2,6 +2,7 @@
 var ImgApp = angular.module('image_app', [
     'akoenig.deckgrid',
     'ngFileUpload',
+    'ngCookies',
 ]);
 
 ImgApp.config(function($locationProvider) {
@@ -78,6 +79,13 @@ var addLabelToImage = function($scope, $http, image_id, label_id) {
     }).then(function success(response) {
         console.log('image+label response: ' + JSON.stringify(response));
         // temp code.
+        for (var i = 0; i < $scope.photos.length; i++) {
+            if ($scope.photos[i].id == image_id) {
+                $scope.photos[i].labels = [];
+                $scope.photos[i].labels = response.data.labels;
+                break;
+            }
+        }
     }, function error(data) {
         console.log(data);
         console.log('error returned!');
@@ -208,7 +216,8 @@ ImgApp.controller('subordinate', ['$rootScope', '$scope', '$http', function($roo
         var id = jQuery(e.target).attr('id');
         console.log('clicked: ' + id);
 
-        var label = jQuery('#input_' + id).val();
+        var $input = jQuery('#input_' + id);
+        var label = $input.val();
         console.log('label ' + label + ' ' + ' image id: ' + id);
 
         if (label && label.length > 0) {
@@ -221,6 +230,8 @@ ImgApp.controller('subordinate', ['$rootScope', '$scope', '$http', function($roo
                     addLabelToImage($rootScope, $http, id, $rootScope.labelLookup[ll]);
                 }
             }
+
+            $input.val('');
         }
     }
 
@@ -270,7 +281,13 @@ ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', '$location', '$
         if (files.length > 0) {
             var path = $location.protocol() + '://' + $location.host() + ':' + $location.port() + '/api/v1/download';
 
-            path += '?' + jQuery.param({images: files});
+            // using jQuery.param doesn't work against the drf.
+            arguments = [];
+            for (var i = 0; i < files.length; i++) {
+                arguments.push('images=' + files[i]);
+            }
+
+            path += '?' + arguments.join("&");
 
             console.log('path: ' + path);
             $window.open(path, '_blank');
@@ -319,7 +336,7 @@ ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', '$location', '$
     }
 }]);
 
-ImgApp.controller('loginCtrl', function($rootScope, $scope, $http) {
+ImgApp.controller('loginCtrl', ['$rootScope', '$scope', '$http', '$cookies', function($rootScope, $scope, $http, $cookies) {
 
     function b64EncodeUnicode(str) {
         return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
@@ -347,7 +364,25 @@ ImgApp.controller('loginCtrl', function($rootScope, $scope, $http) {
             $rootScope.setUser(response.data.user);
             $rootScope.setToken(response.data.token);
 
-            loggedinInit($rootScope, $http);
+            $http({
+                url: '/api/v1/user/1/secondarylogin',
+                method: 'POST',
+                data: {
+                    username: u,
+                    password: p
+                },
+                /*
+                headers: {
+                    'X-CSRFToken': $cookies.get('csrftoken')
+                },
+                */
+            }).then(function success(response) {
+                console.log('logged in successfully!');
+
+                loggedinInit($rootScope, $http);
+            }, function error(data) {
+                console.log('failed to login');
+            });
         }, function error(data) {
             console.log(data);
             console.log('error returned!');
@@ -366,7 +401,7 @@ ImgApp.controller('loginCtrl', function($rootScope, $scope, $http) {
             console.log(['failed to log out', res]);
         });
     }
-});
+}]);
 
 //https://richardtier.com/2014/03/15/authenticate-using-django-rest-framework-endpoint-and-angularjs/
 //https://github.com/akoenig/angular-deckgrid

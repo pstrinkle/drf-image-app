@@ -36,6 +36,9 @@ router.register(r'image', image.ImageViewSet)
 router.register(r'label', label.LabelViewSet)
 router.register(r'download', download.ImageDownloadViewSet)
 
+#router.register(r'test', views.AuthenticateView)
+#router.register(r'logout', views.LogoutView)
+
 label_router = nrouters.NestedSimpleRouter(router, r'image', lookup='image', trailing_slash=False)
 label_router.register(r'label', i_label.LabelViewSet, base_name='image-label')
 
