@@ -3,6 +3,8 @@ from image_app.models import Image, Label
 
 from rest_framework import viewsets
 from rest_framework.response import Response
+from django.http import HttpResponse
+
 import os
 import StringIO
 import zipfile
@@ -32,12 +34,26 @@ class ImageDownloadViewSet(viewsets.ModelViewSet):
         else:
             queryset = Image.objects.none()
 
-        #serializer = ImageSerializer(queryset, many=True, context={'request': request})
         filenames = []
         for image in list(queryset):
-            filenames.append(image.file)
+            filenames.append(image.file.path)
 
         sys.stderr.write('filenames: %s\n' % dumps(filenames))
 
-        return Response('')
+        zip_subdir = "files"
+        zip_filename = "%s.zip" % zip_subdir
+        s = StringIO.StringIO()
+        zf = zipfile.ZipFile(s, "w")
+
+        for fpath in filenames:
+            fdir, fname = os.path.split(fpath)
+            zip_path = os.path.join(zip_subdir, fname)
+            zf.write(fpath, zip_path)
+
+        zf.close()
+
+        resp = HttpResponse(s.getvalue(), content_type = "application/x-zip-compressed")
+        resp['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
+
+        return resp
 
