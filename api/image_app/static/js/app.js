@@ -73,10 +73,16 @@ var filterImages = function($scope, $http) {
 var addLabelToImage = function($scope, $http, image_id, label_id) {
     /* can I update the image in the photos directly? */
 
-    $http({
+    console.log('image_id: ' + image_id + ' label_id: ' + label_id);
+
+    /* return the promise. */
+    return $http({
         url: '/api/v1/image/' + image_id + '/label/' + label_id,
         method: 'PUT',
-    }).then(function success(response) {
+    });
+
+    /*
+    then(function success(response) {
         console.log('image+label response: ' + JSON.stringify(response));
         // temp code.
         for (var i = 0; i < $scope.photos.length; i++) {
@@ -90,6 +96,7 @@ var addLabelToImage = function($scope, $http, image_id, label_id) {
         console.log(data);
         console.log('error returned!');
     });
+    */
 }
 
 var createNewLabel = function($scope, $http, label) {
@@ -210,28 +217,62 @@ ImgApp.run(function($rootScope, $http) {
     }
 });
 
-ImgApp.controller('subordinate', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
+ImgApp.controller('subordinate', ['$rootScope', '$scope', '$http', '$q', function($rootScope, $scope, $http, $q) {
 
     $scope.linkLabel = function(e) {
-        var id = jQuery(e.target).attr('id');
-        console.log('clicked: ' + id);
+        var image_id = jQuery(e.target).attr('id');
+        console.log('clicked: ' + image_id);
 
-        var $input = jQuery('#input_' + id);
+        var $input = jQuery('#input_' + image_id);
         var label = $input.val();
-        console.log('label ' + label + ' ' + ' image id: ' + id);
+        $input.val('');
 
+        console.log('label ' + label + ' ' + ' image id: ' + image_id);
+
+        /* XXX: after the loops are finished, I should call retrieve on the image once. */
         if (label && label.length > 0) {
             labels = label.split(',');
+            var promises = [];
+
+            console.log('labels: ' + JSON.stringify(labels));
+
             for (var i = 0; i < labels.length; i++) {
                 var ll = labels[i].trim();
+                console.log('ll: ' + ll);
+
                 if ($rootScope.labelLookup[ll] == undefined) {
                     console.log('brand new label!');
                 } else {
-                    addLabelToImage($rootScope, $http, id, $rootScope.labelLookup[ll]);
+                    console.log('not a brand new label');
+                    //(function() {
+                        var ll2 = ll;
+                        var id2 = $rootScope.labelLookup[ll2];
+                        console.log('ll2: ' + ll2 + ' id2: ' + id2)
+                        promises.push(addLabelToImage($rootScope, $http, image_id, id2));
+                    //});
                 }
             }
 
-            $input.val('');
+            console.log('waiting on promises: ' + promises.length)
+
+            $q.all(promises);
+
+            /* wait for the promises to run. */
+            $http({
+                url: '/api/v1/image/' + image_id,
+                method: 'GET',
+            }).then(function success(response) {
+                console.log('image+label response: ' + JSON.stringify(response));
+                for (var i = 0; i < $rootScope.photos.length; i++) {
+                    if ($rootScope.photos[i].id == image_id) {
+                        $rootScope.photos[i].labels = [];
+                        $rootScope.photos[i].labels = response.data.labels;
+                        break;
+                    }
+                }
+            }, function error(response) {
+                console.log('error on getting the image back');
+            });
         }
     }
 
