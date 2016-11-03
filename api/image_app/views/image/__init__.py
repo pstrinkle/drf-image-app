@@ -1,10 +1,14 @@
 from image_app.serializers import ImageSerializer
 from image_app.models import Image, Label
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets
+from rest_framework import status
 from rest_framework.response import Response
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ImageViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
@@ -12,6 +16,20 @@ class ImageViewSet(viewsets.ModelViewSet):
 
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
+
+    def create(self, request, **kwargs):
+        """
+        Create but return 201 on success.
+        """
+
+        serializer_class = self.get_serializer_class()
+
+        serializer = serializer_class(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, **kwargs):
         """

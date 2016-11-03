@@ -42,7 +42,7 @@ var listImages = function($scope, $http) {
 
         // temp code.
         angular.forEach(response.data, function(element, index) {
-            $scope.addImage(element.id, element.file, element.labels);
+            $scope.addImage(element.id, element.thumbnail, element.labels);
         });
 
     }, function error(data) {
@@ -61,7 +61,7 @@ var filterImages = function($scope, $http) {
 
         // temp code.
         angular.forEach(response.data, function(element, index) {
-            $scope.addImage(element.id, element.file, element.labels);
+            $scope.addImage(element.id, element.thumbnail, element.labels);
         });
 
     }, function error(data) {
@@ -152,6 +152,7 @@ ImgApp.run(function($rootScope, $http) {
 
         /* this isn't the most efficient. */
         $rootScope.photos = [];
+        $rootScope.downloadSelection = {};
         filterImages($rootScope, $http);
     }
 
@@ -166,6 +167,7 @@ ImgApp.run(function($rootScope, $http) {
 
         /* this isn't the most efficient. */
         $rootScope.photos = [];
+        $rootScope.downloadSelection = {};
         filterImages($rootScope, $http);
     }
 
@@ -348,7 +350,7 @@ ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', '$location', '$
             console.log('Success ' + resp.config.data.file.name + ' uploaded. Response: ' + JSON.stringify(resp.data));
             /* XXX: There's no guarantee the image would show up given the filter of selected. */
             /* XXX: Since you can't upload an image with labels... if any are selected, this can't show up. */
-            $scope.addImage(resp.data.id, resp.data.file, resp.data.labels);
+            $scope.addImage(resp.data.id, resp.data.thumbnail, resp.data.labels);
         }, function(resp) {
             console.log('Error status: ' + resp.status);
         }, function(evt) {
@@ -366,6 +368,7 @@ ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', '$location', '$
                     data: {file: files[i]}
                 }).then(function(resp) {
                     console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
+                    $scope.addImage(resp.data.id, resp.data.thumbnail, resp.data.labels);
                 }, function(resp) {
                     console.log('Error status: ' + resp.status);
                 }, function(evt) {
