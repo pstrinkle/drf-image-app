@@ -9,7 +9,7 @@ db:
 
 web:
     volumes:
-        - .:/usr/src/app
+        - image_app:/usr/src/app
     ports:
         - "8000:8000"
     links:
