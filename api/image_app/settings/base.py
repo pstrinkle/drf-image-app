@@ -23,9 +23,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SECRET_KEY = 'q%zbq+-$n0(0u)jzpo=c@w58@%fs*_9h72g#2)xxfo*0x8u-r)'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -101,16 +98,6 @@ REST_FRAMEWORK = {
 #'rest_framework.authentication.TokenAuthentication'
 
 ROOT_URLCONF = 'urls'
-
-# Database
-# https://docs.djangoproject.com/en/1.10/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
