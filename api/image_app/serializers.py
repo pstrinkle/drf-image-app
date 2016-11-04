@@ -6,6 +6,18 @@ from django.apps import apps
 
 from image_app.models import *
 
+from easy_thumbnails.files import get_thumbnailer
+from easy_thumbnails.templatetags.thumbnail import thumbnail_url
+
+
+class ThumbnailSerializer(serializers.ImageField):
+    """
+    For use in the serializer.
+    """
+
+    def to_representation(self, instance):
+        return thumbnail_url(instance, 'small')
+
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
     """
@@ -26,12 +38,20 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     def create(self, validated_data):
         validated_data['size'] = validated_data['file'].size
 
-        return Image.objects.create(**validated_data)
+        validated_data['thumbnail'] = validated_data['file']
+
+        img = Image.objects.create(**validated_data)
+
+        # create a thumbnail from the uploaded image.
+        #img.thumbnail = get_thumbnailer(img.file)
+        #img.save()
+
+        return img
 
     class Meta:
         model = apps.get_model('image_app.Image')
-        fields = ('size', 'added', 'file', 'id', 'labels')
-        read_only_fields = ('size',)
+        fields = ('size', 'added', 'file', 'id', 'labels', 'thumbnail')
+        read_only_fields = ('size', )
 
 
 class LabelSerializer(serializers.HyperlinkedModelSerializer):

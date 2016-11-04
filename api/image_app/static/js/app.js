@@ -14,6 +14,36 @@ ImgApp.config(function($locationProvider) {
 */
 });
 
+/* XXX: Define all of the following into resources. */
+
+/* the following hack is to force uploads of images to be serial in nature, which
+ * is obviously a performance hit, but with the sqlite3 backend... it couldn't handle
+ * real use and I don't feel like going through setting up postgres or something like it
+ * just for this.
+ */
+var uploadImage = function(Upload, $scope) {
+    var f = $scope.uploadQueue.shift();
+    if (!f) {
+        return;
+    }
+
+    Upload.upload({
+        url: 'api/v1/image',
+        data: {file: f}
+    }).then(function(resp) {
+        console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
+        $scope.addImage(resp.data.id, resp.data.thumbnail, resp.data.labels);
+
+        return uploadImage(Upload, $scope);
+
+    }, function(resp) {
+        console.log('Error status: ' + resp.status);
+    }, function(evt) {
+        var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+        console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+    });
+}
+
 var listLabels = function($scope, $http) {
     $http({
         url: '/api/v1/label',
@@ -42,7 +72,7 @@ var listImages = function($scope, $http) {
 
         // temp code.
         angular.forEach(response.data, function(element, index) {
-            $scope.addImage(element.id, element.file, element.labels);
+            $scope.addImage(element.id, element.thumbnail, element.labels);
         });
 
     }, function error(data) {
@@ -61,7 +91,7 @@ var filterImages = function($scope, $http) {
 
         // temp code.
         angular.forEach(response.data, function(element, index) {
-            $scope.addImage(element.id, element.file, element.labels);
+            $scope.addImage(element.id, element.thumbnail, element.labels);
         });
 
     }, function error(data) {
@@ -127,10 +157,14 @@ ImgApp.run(function($rootScope, $http) {
     $rootScope.loggedin = false;
 
     $rootScope.photos = [];
-    $rootScope.labelLookup = {};
-    $rootScope.labels = [];
+
     $rootScope.selected = []; // used for filtering the images.
     $rootScope.downloadSelection = {};
+
+    $rootScope.labelLookup = {};
+    $rootScope.labels = [];
+
+    $rootScope.uploadQueue = [];
 
     $rootScope.addLabel = function(label, id) {
         $rootScope.labels.push(label);
@@ -152,6 +186,7 @@ ImgApp.run(function($rootScope, $http) {
 
         /* this isn't the most efficient. */
         $rootScope.photos = [];
+        $rootScope.downloadSelection = {};
         filterImages($rootScope, $http);
     }
 
@@ -166,6 +201,7 @@ ImgApp.run(function($rootScope, $http) {
 
         /* this isn't the most efficient. */
         $rootScope.photos = [];
+        $rootScope.downloadSelection = {};
         filterImages($rootScope, $http);
     }
 
@@ -341,38 +377,19 @@ ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', '$location', '$
             return false;
         }
 
-        Upload.upload({
-            url: 'api/v1/image',
-            data: {file: file}
-        }).then(function(resp) {
-            console.log('Success ' + resp.config.data.file.name + ' uploaded. Response: ' + JSON.stringify(resp.data));
-            /* XXX: There's no guarantee the image would show up given the filter of selected. */
-            /* XXX: Since you can't upload an image with labels... if any are selected, this can't show up. */
-            $scope.addImage(resp.data.id, resp.data.file, resp.data.labels);
-        }, function(resp) {
-            console.log('Error status: ' + resp.status);
-        }, function(evt) {
-            var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
-            console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
-        });
+        $scope.uploadQueue.push(file);
+        uploadImage(Upload, $scope);
     };
 
     // for multiple files:
     $scope.uploadFiles = function(files) {
         if (files && files.length) {
             for (var i = 0; i < files.length; i++) {
-                Upload.upload({
-                    url: 'api/v1/image',
-                    data: {file: files[i]}
-                }).then(function(resp) {
-                    console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
-                }, function(resp) {
-                    console.log('Error status: ' + resp.status);
-                }, function(evt) {
-                    var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
-                    console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
-                });
+                $scope.uploadQueue.push(files[i]);
             }
+
+            /* force synchronous uploads. */
+            uploadImage(Upload, $scope);
         }
     }
 }]);

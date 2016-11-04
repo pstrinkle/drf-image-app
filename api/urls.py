@@ -15,10 +15,8 @@ Including another URLconf
 """
 
 from django.conf.urls import url, include
-#from django.conf.urls.defaults import patterns
 from rest_framework import routers
 from rest_framework_nested import routers as nrouters
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -35,9 +33,6 @@ router.register(r'user', user.UserViewSet)
 router.register(r'image', image.ImageViewSet)
 router.register(r'label', label.LabelViewSet)
 router.register(r'download', download.ImageDownloadViewSet)
-
-#router.register(r'test', views.AuthenticateView)
-#router.register(r'logout', views.LogoutView)
 
 label_router = nrouters.NestedSimpleRouter(router, r'image', lookup='image', trailing_slash=False)
 label_router.register(r'label', i_label.LabelViewSet, base_name='image-label')
@@ -58,12 +53,4 @@ urlpatterns = [
     url('^.*$', views.IndexView.as_view(), name='index'),
 ]
 
-# + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-#urlpatterns += patterns('', (r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}))
-
-#urlpatterns += staticfiles_urlpatterns()
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-#urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-#url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
-

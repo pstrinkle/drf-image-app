@@ -4,3 +4,4 @@ drf-nested-routers
 django-rest-knox
 Pillow
 cryptography
+easy-thumbnails
