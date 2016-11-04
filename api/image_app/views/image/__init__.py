@@ -37,16 +37,20 @@ class ImageViewSet(viewsets.ModelViewSet):
         """
 
         labels = request.query_params.getlist('labels', [])
+        unlabeled = request.query_params.get('unlabeled', False)
 
         import sys
         from json import dumps
         sys.stderr.write('labels in query: %s\n' % dumps(labels))
 
-        if len(labels) > 0:
-            label_ids = Label.objects.filter(value__in=labels).values_list('id', flat=True)
-            queryset = Image.objects.filter(labels__in=label_ids)
+        if unlabeled:
+            queryset = Image.objects.filter(labels=None)
         else:
-            queryset = Image.objects.all()
+            if len(labels) > 0:
+                label_ids = Label.objects.filter(value__in=labels).values_list('id', flat=True)
+                queryset = Image.objects.filter(labels__in=label_ids)
+            else:
+                queryset = Image.objects.all()
 
         serializer = ImageSerializer(queryset, many=True, context={'request': request})
 
