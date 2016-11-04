@@ -8,6 +8,7 @@ class LabelViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
     """
+
     queryset = Label.objects.all()
     serializer_class = LabelSerializer
 

@@ -27,6 +27,14 @@
     @media screen and (max-width: 480px){
         .deckgrid[deckgrid]::before { content: '1 .column.column-1-1'; }
     }
+
+    input[type="checkbox"] + label {
+        border: white 2px solid;
+    }
+
+    input[type="checkbox"]:checked + label {
+        border: blue 2px solid;
+    }
     </style>
 </head>
 <body>
@@ -66,51 +74,64 @@
 
         <!-- Create new things controls -->
         <div class="container">
-            <div class="col-md-6">
-                <form class="m-t" role="form" ng-submit="createLabel()">
-                    <div class="form-group">
-                        <input type="text" ng-model="newLabel" class="form-control" placeholder="New Label" />
+            <div class="row">
+                <div class="col-md-6">
+                    <form class="form-inline" role="form" ng-submit="createLabel()">
+                        <div class="form-group">
+                            <input type="text" ng-model="newLabel" class="form-control" placeholder="New Label" />
+                        </div>
+                        <button type="submit" class="btn btn-primary">create</button>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="btn btn-primary button" ngf-select="uploadFiles($files)" multiple="multiple">Upload on multiple files select</div>
                     </div>
-                    <button type="submit" class="btn btn-primary">create</button>
-                </form>
-            </div>
-            <div class="col-md-6">
-                <div class="btn btn-primary button" ngf-select="upload($file)">Upload on file select</div>
-                <div class="btn btn-primary button" ngf-select="uploadFiles($files)" multiple="multiple">Upload on multiple files select</div>
+                    <div class="row">
+                        <div id="uploadtrackingContainer">
+                            <h3>Uploading {{uploadQueue.length}}</h3>
+                            <div class="progress" id="barContainer">
+                                <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                     aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width:{{progressBar}}%">{{progressBar}}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <br />
-        <br />
 
         <!-- list of all labels in the system -->
         <div class="container">
-            <div class="col-md-12">
-                <h3>Available Labels {{labels.length}}</h3>
-                <ul class="nav nav-pills">
-                    <li ng-repeat="label in labels" ng-click="selectLabel($event)"><a href="#">{{label}}</a></li>
-                </ul>
+            <!-- because of how it works, by putting the sticky into a sub-div, it'll maintain container alignment -->
+            <div sticky>
+                <div class="row" style="background-color:white;">
+                <div class="col-md-6" style="background-color:white;">
+                    <h3>Available Labels {{labels.length}}</h3>
+                    <ul class="nav nav-pills" style="background-color:white;">
+                        <li ng-click="selectUnlabeled($event)" id="unlabeledLi"><a href="#" onclick="return false;">unlabeled</a></li>
+                        <li ng-repeat="label in labels" ng-click="selectLabel($event)"><a href="#" onclick="return false;">{{label}} ({{labelCnts[label]}})</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-6" style="background-color:white;">
+                    <h3>Selected Labels {{selected.length}}</h3>
+                    <ul class="nav nav-pills">
+                        <li class="active" ng-repeat="label in selected" ng-click="deselectLabel($event)"><a href="#" onclick="return false;">{{label}} ({{labelCnts[label]}})</a></li>
+                    </ul>
+                </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12"  style="background-color:white; padding-bottom:10px;">
+                        <a href="#" ng-click="download()">Download {{downloadCount}}</a>
+                    </div>
+                </div>
             </div>
         </div>
 
         <br />
 
-        <!-- list of all selected labels. -->
         <div class="container">
-            <div class="col-md-12">
-                <h3>Selected Labels {{selected.length}}</h3>
-                <ul class="nav nav-pills">
-                    <li class="active" ng-repeat="label in selected" ng-click="deselectLabel($event)"><a href="#">{{label}}</a></li>
-                </ul>
-            </div>
-        </div>
 
-        <div class="container">
-            <div class="col-md-12">
-                <br />
-                <a href="#" ng-click="download()">Download</a>
-                <br />
-            </div>
         </div>
 
         <!-- photo deck area -->
@@ -119,12 +140,13 @@
                 <div deckgrid class="deckgrid" source="photos">
                     <div class="a-card">
                         <div ng-controller="subordinate">
-                            <label for="select_{{card.id}}">
-                                <input type="checkbox" id="select_{{card.id}}" ng-click="selectForDownload($event)"/>
-                                select
+                            <h4 data-ng-bind="card.labels"></h4>
+
+                            <div style="width:200px;height:200px;">
+                            <input type="checkbox" id="select_{{card.id}}" ng-click="selectForDownload($event)" style="display:none;" />
+                            <label for="select_{{card.id}}" class="image-label">
+                                <img style="max-width: 200px; max-height: 200px;" src="" data-ng-src="{{card.src}}">
                             </label>
-                            <h5 data-ng-bind="card.labels"></h5>
-                            <img style="max-width: 200px; max-height: 200px;" src="" data-ng-src="{{card.src}}">
                             <form id="{{card.id}}" ng-submit="linkLabel($event)">
                                 <div class="form-group">
                                     <input id="input_{{card.id}}" type="text" placeholder="comma separated list" class="form-control" style="display:inline-block; max-width: 160px;" />
@@ -132,6 +154,7 @@
                                     <!-- ng-click="linkLabel($event)" -->
                                 </div>
                             </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -152,6 +175,7 @@
     <script src="{% static 'bower_components/angular-cookies/angular-cookies.min.js' %}"></script>
     <script src="{% static 'bower_components/angular-deckgrid/angular-deckgrid.js' %}"></script>
     <script src="{% static 'bower_components/angular-resource/angular-resource.min.js' %}"></script>
+    <script src="{% static 'bower_components/ngSticky/dist/sticky.min.js' %}"></script>
     <script src="{% static 'bower_components/ng-file-upload/ng-file-upload.min.js' %}"></script>
     <script src="{% static 'js/app.js' %}"></script>
 </body>

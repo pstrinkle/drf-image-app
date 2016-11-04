@@ -62,9 +62,19 @@ class LabelSerializer(serializers.HyperlinkedModelSerializer):
     # We don't want to list the Customers for this M2M relationship, I just put this line for completeness.
     # images = PrimaryKeyRelatedField(many=True, read_only=True)
 
+    count = serializers.SerializerMethodField(read_only=False)
+
+    def get_count(self, obj):
+        """
+        I want the count of images with this label.
+        """
+
+        count = Image.objects.filter(labels__in=[obj.id]).count()
+        return count
+
     class Meta:
         model = apps.get_model('image_app.Label')
-        fields = ('value', 'id')
+        fields = ('value', 'count', 'id')
 
 
 class ImageUserSerializer(serializers.HyperlinkedModelSerializer):
