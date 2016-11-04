@@ -48,7 +48,7 @@ class ImageViewSet(viewsets.ModelViewSet):
         else:
             if len(labels) > 0:
                 label_ids = Label.objects.filter(value__in=labels).values_list('id', flat=True)
-                queryset = Image.objects.filter(labels__in=label_ids)
+                queryset = Image.objects.filter(labels__in=label_ids).distinct()
             else:
                 queryset = Image.objects.all()
 

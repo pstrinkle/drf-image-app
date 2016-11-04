@@ -88,13 +88,13 @@
                         <div class="btn btn-primary button" ngf-select="uploadFiles($files)" multiple="multiple">Upload on multiple files select</div>
                     </div>
                     <div class="row">
-                        <div>
-                        <h3>Uploading {{uploadQueue.length}}</h3>
-                        <div class="progress" id="barContainer">
-                            <div class="progress-bar progress-bar-striped active" role="progressbar"
-                                 aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width:{{progressBar}}%">{{progressBar}}%
+                        <div id="uploadtrackingContainer">
+                            <h3>Uploading {{uploadQueue.length}}</h3>
+                            <div class="progress" id="barContainer">
+                                <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                     aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width:{{progressBar}}%">{{progressBar}}%
+                                </div>
                             </div>
-                        </div>
                         </div>
                     </div>
                 </div>
@@ -109,13 +109,14 @@
                 <div class="col-md-6" style="background-color:white;">
                     <h3>Available Labels {{labels.length}}</h3>
                     <ul class="nav nav-pills" style="background-color:white;">
-                        <li ng-repeat="label in labels" ng-click="selectLabel($event)"><a href="#" onclick="return false;">{{label}}</a></li>
+                        <li ng-click="selectUnlabeled($event)" id="unlabeledLi"><a href="#" onclick="return false;">unlabeled</a></li>
+                        <li ng-repeat="label in labels" ng-click="selectLabel($event)"><a href="#" onclick="return false;">{{label}} ({{labelCnts[label]}})</a></li>
                     </ul>
                 </div>
                 <div class="col-md-6" style="background-color:white;">
                     <h3>Selected Labels {{selected.length}}</h3>
                     <ul class="nav nav-pills">
-                        <li class="active" ng-repeat="label in selected" ng-click="deselectLabel($event)"><a href="#" onclick="return false;">{{label}}</a></li>
+                        <li class="active" ng-repeat="label in selected" ng-click="deselectLabel($event)"><a href="#" onclick="return false;">{{label}} ({{labelCnts[label]}})</a></li>
                     </ul>
                 </div>
                 </div>
