@@ -6,6 +6,8 @@ from django.utils.decorators import method_decorator
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseNotFound
 from django.conf import settings
+from django.template.exceptions import TemplateDoesNotExist
+from django.http import Http404
 
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
@@ -26,7 +28,10 @@ class IndexView(TemplateView):
         if len(request_path) == 0:
             request_path = 'index.html'
 
-        return render(request, request_path, {})
+        try:
+            return render(request, request_path, {})
+        except TemplateDoesNotExist:
+            raise Http404('404 Not Found')
 
 
 class ImageView(View):
