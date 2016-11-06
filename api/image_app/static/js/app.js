@@ -2,7 +2,6 @@
     //'use strict';
 
     var ImgApp = angular.module('image_app', [
-        'akoenig.deckgrid',
         'ngFileUpload',
         'ngCookies',
         'sticky',
@@ -431,36 +430,27 @@
             return false;
         }
 
-        $scope.selectLabel = function(e) {
-            console.log('clicked', $(e.target).text());
-            var text = '';
-
+        $scope.selectLabel = function(chip) {
             if ($scope.unlabeledSelected) {
                 $scope.unlabeledSelected = false;
                 jQuery('#unlabeledLi').removeClass('active');
             }
 
+            /*
             if ($(e.target).hasClass('badge')) {
                 text = $(e.target).parent().text();
             } else {
                 text = $(e.target).text();
             }
+            */
 
-            var pieces = text.split(' ');
-            pieces.pop();
-
-            var filter = pieces.join(' ').trim();
+            var filter = chip.trim();
             console.log('filter: ' + filter);
             $scope.addFilter(filter);
-
-            e.preventDefault();
-            return false;
         }
 
-        $scope.deselectLabel = function(e) {
-            console.log('clicked', $(e.target).text());
-            var text = '';
-
+        $scope.deselectLabel = function(chip) {
+            /*
             if ($(e.target).hasClass('badge')) {
                 text = $(e.target).parent().text();
             } else {
@@ -469,14 +459,12 @@
 
             var pieces = text.split(' ');
             pieces.pop();
+            */
 
-            var filter = pieces.join(' ').trim();
+            var filter = chip.trim();
 
             console.log('filter: ' + filter);
             $scope.delFilter(filter);
-
-            e.preventDefault();
-            return false;
         }
 
         $scope.applyLabelMultiplePhotos = function() {
@@ -600,17 +588,27 @@
             if (label && label.length > 0) {
                 //labels = label.split(',');
                 var labelsToAdd = [];
-
-                console.log('labels: ' + JSON.stringify(labels));
-
-                for (var i = 0; i < labels.length; i++) {
-                    var ll = labels[i].trim();
-                    console.log('ll: ' + ll);
-                    labelsToAdd.push(ll);
-                }
+                labelsToAdd.push(label);
 
                 addLabels($rootScope, $http, labelsToAdd, 0, image_id);
             }
+        }
+
+        $rootScope.selectedItem = null;
+        $rootScope.searchText = null;
+        $rootScope.querySearch = querySearch;
+
+        function querySearch (query) {
+            var results = query ? $rootScope.labels.filter(createFilterFor(query)) : [];
+            return results;
+        }
+
+        function createFilterFor(query) {
+            var lowercaseQuery = angular.lowercase(query);
+
+            return function filterFn(label) {
+                return (label.indexOf(lowercaseQuery) === 0);
+            };
         }
 
         $scope.selectForDownload = function(e) {

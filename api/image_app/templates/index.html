@@ -105,22 +105,27 @@
                     <li ng-click="selectUnlabeled($event)" id="unlabeledLi">
                         <a href="#" onclick="return false;">unlabeled</a>
                     </li>
-                    <li ng-repeat="label in labels.sort()"
-                        ng-click="selectLabel($event)">
-                        <a href="#" onclick="return false;">{{label}} <span class="badge">{{labelCnts[label]}}</span></a>
-                    </li>
                 </ul>
+                <md-chips ng-model="labels"
+                          readonly="true">
+                    <md-chip-template ng-click="selectLabel($chip)">
+                        <span>{{$chip}}</span>
+                        <em>({{labelCnts[$chip]}})</em>
+                    </md-chip-template>
+                </md-chips>
             </div>
 
             <div>
                 <h3>Selected Labels {{selected.length}}</h3>
-                <ul class="nav nav-pills">
-                    <li class="active"
-                        ng-repeat="label in selected.sort()"
-                        ng-click="deselectLabel($event)">
-                        <a href="#" onclick="return false;">{{label}} <span class="badge">{{labelCnts[label]}}</span></a>
-                    </li>
-                </ul>
+                <md-chips ng-model="selected"
+                          readonly="true"
+                          md-removable="true"
+                          md-on-remove="deselectLabel($chip)">
+                    <md-chip-template>
+                        <span>{{$chip}}</span>
+                        <em>({{labelCnts[$chip]}})</em>
+                    </md-chip-template>
+                </md-chips>
             </div>
 
             <div>
@@ -144,9 +149,19 @@
                         <md-card-title-text>
                             <md-chips ng-model="card.labels"
                                       readonly="false"
-                                      md-removable="true"
+                                      md-removable="false"
                                       md-on-add="linkLabel($chip, card.id)"
-                                      md-on-remove="removeLabel($chip, card.id)"></md-chips>
+                                      md-on-remove="removeLabel($chip, card.id)"
+                                      md-require-match="false"
+                                      md-autocomplete-snap>
+                                <md-autocomplete
+                                    md-selected-item="selectedItem"
+                                    md-search-text="searchText"
+                                    md-items="item in querySearch(searchText)"
+                                    md-item-text="item">
+                                    <span md-highlight-text="searchText">{{item}}</span>
+                                </md-autocomplete>
+                            </md-chips>
                         </md-card-title-text>
                     </md-card-title>
                     <md-card-content>
@@ -186,7 +201,6 @@
     <script src="{% static 'bower_components/angular-animate/angular-animate.min.js' %}"></script>
     <script src="{% static 'bower_components/angular-aria/angular-aria.min.js' %}"></script>
     <script src="{% static 'bower_components/angular-cookies/angular-cookies.min.js' %}"></script>
-    <script src="{% static 'bower_components/angular-deckgrid/angular-deckgrid.js' %}"></script>
     <script src="{% static 'bower_components/angular-messages/angular-messages.min.js' %}"></script>
     <script src="{% static 'bower_components/angular-resource/angular-resource.min.js' %}"></script>
     <script src="{% static 'bower_components/ngSticky/dist/sticky.min.js' %}"></script>
