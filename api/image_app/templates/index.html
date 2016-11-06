@@ -15,23 +15,6 @@
     <link rel="stylesheet" href="{% static 'bower_components/angular-material/angular-material.min.css' %}">
 
     <style>
-
-    .deckgrid[deckgrid]::before {
-        /* Specifies that the grid should have a maximum of 4 columns. Each column will have the classes 'column' and 'column-1-4' */
-        content: '4 .column.column-1-4';
-        font-size: 0; /* See https://github.com/akoenig/angular-deckgrid/issues/14#issuecomment-35728861 */
-        visibility: hidden;
-    }
-
-    .deckgrid .column { float: left; }
-    .deckgrid .column-1-4 { width: 25%; }
-
-    .deckgrid .column-1-1 { width: 100%; }
-
-    @media screen and (max-width: 480px){
-        .deckgrid[deckgrid]::before { content: '1 .column.column-1-1'; }
-    }
-
     input[type="checkbox"] + label {
         border: white 2px solid;
     }
@@ -129,13 +112,26 @@
             </div>
 
             <div>
-                <div>
-                    <md-button class="md-raised md-cornered md-primary" ng-click="download()">
+                <div layout="row">
+                    <md-button class="md-primary md-raised md-cornered" ng-click="download()">
                         Download <span class="badge" style="color:black;background-color:white;">{{downloadCount}}</span>
                     </md-button>
-                    <md-button class="md-raised md-cornered md-primary" ng-click="downloadAll()">
+                    <md-button class="md-primary md-raised md-cornered" ng-click="downloadAll()">
                         Download All <span class="badge" style="color:black;background-color:white;">{{photos.length}}</span>
                     </md-button>
+
+                        <!--
+                    <md-select ng-model="weapon" placeholder="default" class="md-no-underline">
+                        <md-option value="axe">10</md-option>
+                        <md-option value="sword">50</md-option>
+                        <md-option value="wand">100</md-option>
+                    </md-select>
+                    -->
+
+                    <md-button class="md-primary md-raised md-cornered" ng-click="prevPage()">{{prevPageNum}}</md-button>
+                    <md-button class="md-primary md-raised md-cornered">{{currentPage}}</md-button>
+                    <md-button class="md-primary md-raised md-cornered" ng-click="nextPage()">{{nextPageNum}}</md-button>
+                    <md-button class="md-primary md-raised" ng-click="showAdvanced($event)">Edit Labels</md-button>
                 </div>
             </div>
 
@@ -149,7 +145,7 @@
                         <md-card-title-text>
                             <md-chips ng-model="card.labels"
                                       readonly="false"
-                                      md-removable="false"
+                                      md-removable="true"
                                       md-on-add="linkLabel($chip, card.id)"
                                       md-on-remove="removeLabel($chip, card.id)"
                                       md-require-match="false"
