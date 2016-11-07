@@ -452,96 +452,106 @@
 
                 /* Walk through the list of items (not being deleted) and see if they've changed */
                 for (var i = 0; i < $scope.labels.length; i++) {
-                    var l = $scope.labels[i];
-                    var lid = $scope.labelLookup[l];
+                    var label = $scope.labels[i];
 
-                    var $inputField = jQuery('#edit_label_' + l);
-                    var v = $inputField.val().trim();
+                    var $inputField = jQuery('#edit_label_' + label);
+                    var value = $inputField.val().trim();
 
-                    if (l != v) {
-                        console.log('label changed: was: ' + l + ' now: ' + v);
+                    if (label != value) {
+                        console.log('label changed: was: ' + label + ' now: ' + value);
 
                         /* did they delete it? -- */
-                        if ($scope.toDelete.indexOf(l) != -1) {
+                        if ($scope.toDelete.indexOf(label) != -1) {
                             console.log('they deleted it');
                         } else {
-                            var updateLabel = function() {
-                                $http({
-                                    url: '/api/v1/label/' + lid,
-                                    method: 'PUT',
-                                    data: {
-                                        value: v,
-                                    },
-                                }).then(function success(response) {
+                            (function () {
+                                var l = label;
+                                var v = value;
+                                var lid = $scope.labelLookup[label];
 
-                                    $rootScope.labelLookup[v] = $rootScope.labelLookup[l];
-                                    $rootScope.labelCnts[v] = $rootScope.labelCnts[l];
+                                var updateLabel = function() {
+                                    $http({
+                                        url: '/api/v1/label/' + lid,
+                                        method: 'PUT',
+                                        data: {
+                                            value: v,
+                                        },
+                                    }).then(function success(response) {
 
-                                    delete $rootScope.labelLookup[l];
-                                    delete $rootScope.labelCnts[l];
+                                        $rootScope.labelLookup[v] = $rootScope.labelLookup[l];
+                                        $rootScope.labelCnts[v] = $rootScope.labelCnts[l];
 
-                                    for (var k = 0; k < $rootScope.labels.length; k++) {
-                                        if ($rootScope.labels[i] === l) {
-                                            $rootScope.labels[i] = v;
-                                            break;
+                                        delete $rootScope.labelLookup[l];
+                                        delete $rootScope.labelCnts[l];
+
+                                        for (var k = 0; k < $rootScope.labels.length; k++) {
+                                            if ($rootScope.labels[i] === l) {
+                                                $rootScope.labels[i] = v;
+                                                break;
+                                            }
                                         }
-                                    }
-                                    for (var j = 0; j < $rootScope.selected.length; j++) {
-                                        if ($rootScope.selected[i] === l) {
-                                            $rootScope.selected[i] = v;
-                                            break;
+                                        for (var j = 0; j < $rootScope.selected.length; j++) {
+                                            if ($rootScope.selected[i] === l) {
+                                                $rootScope.selected[i] = v;
+                                                break;
+                                            }
                                         }
-                                    }
 
-                                    console.log('successfully renamed it');
-                                }, function error(data) {
-                                    console.log(data);
-                                    console.log('error returned!');
-                                });
-                            }
+                                        console.log('successfully renamed it');
+                                    }, function error(data) {
+                                        console.log(data);
+                                        console.log('error returned!');
+                                    });
+                                }
 
-                            tasks.push(updateLabel);
+                                tasks.push(updateLabel);
+                            })();
                         }
                     }
                 }
 
                 /* Walk through the list of items to delete, and delete them. */
                 for (var i = 0; i < $scope.toDelete.length; i++) {
-                    var l = $scope.toDelete[i];
-                    var lid = $scope.labelLookup[l];
+                    var label = $scope.toDelete[i];
+                    var label_id = $scope.labelLookup[l];
 
-                    console.log('deleting label: ' + l + ' id: ' + lid);
+                    console.log('deleting label: ' + label + ' id: ' + label_id);
 
-                    var deleteLabel = function() {
-                        console.log('deleting: ' + l);
+                    (function () {
+                        var l = label;
+                        var lid = $scope.labelLookup[label];
 
-                        $http({
-                            url: '/api/v1/label/' + lid,
-                            method: 'DELETE',
-                        }).then(function success(response) {
-                            console.log('del label.response: ' + JSON.stringify(response));
-                            delete $rootScope.labelLookup[l];
-                            delete $rootScope.labelCnts[l];
+                        var deleteLabel = function() {
+                            console.log('deleting: ' + l);
 
-                            for (var k = 0; k < $rootScope.labels.length; k++) {
-                                if ($rootScope.labels[i] === l) {
-                                    $rootScope.labels.splice(i, 1);
-                                    break;
+                            $http({
+                                url: '/api/v1/label/' + lid,
+                                method: 'DELETE',
+                            }).then(function success(response) {
+                                console.log('del label.response: ' + JSON.stringify(response));
+                                delete $rootScope.labelLookup[l];
+                                delete $rootScope.labelCnts[l];
+
+                                for (var k = 0; k < $rootScope.labels.length; k++) {
+                                    if ($rootScope.labels[i] === l) {
+                                        $rootScope.labels.splice(i, 1);
+                                        break;
+                                    }
                                 }
-                            }
-                            for (var j = 0; j < $rootScope.selected.length; j++) {
-                                if ($rootScope.selected[i] === l) {
-                                    $rootScope.selected.splice(i, 1);
-                                    break;
+                                for (var j = 0; j < $rootScope.selected.length; j++) {
+                                    if ($rootScope.selected[i] === l) {
+                                        $rootScope.selected.splice(i, 1);
+                                        break;
+                                    }
                                 }
-                            }
-                        }, function error(data) {
-                            console.log(data);
-                            console.log('error returned!');
-                        });
-                    }
+                            }, function error(data) {
+                                console.log(data);
+                                console.log('error returned!');
+                            });
+                        }
 
-                    tasks.push(deleteLabel);
+                        tasks.push(deleteLabel);
+                    })();
                 }
 
                 var hideThis = function() {
@@ -576,6 +586,39 @@
                 preserveScope: true,  // do not forget this if use parent scope
             });
         };
+
+        function ZoomController($scope, $mdDialog, image) {
+            $scope.cancel = function() {
+                $mdDialog.cancel();
+            };
+
+            $scope.image = image;
+        }
+
+        $scope.showZoom = function(ev, image_src) {
+            image_src = image_src.replace('thumbnails/', '');
+
+            $mdDialog.show({
+                controller: ZoomController,
+                template:
+                '<md-dialog>' +
+                '  <md-content layout-padding>' +
+                '    <div class="container"><img src="{{ image }}"/></div>' +
+                '  </md-content>' +
+                '  <div class="md-actions">' +
+                '    <md-button ng-click="cancel()">' +
+                '      Close' +
+                '    </md-button>' +
+                '  </div>' +
+                '</md-dialog>',
+                targetEvent: ev,
+                clickOutsideToClose:true,
+                fullscreen: true,
+                locals: {
+                    image: image_src
+                }
+            });
+        }
 
         $scope.prevPage = function() {
             $http({

@@ -22,6 +22,15 @@
     input[type="checkbox"]:checked + label {
         border: blue 2px solid;
     }
+
+    .container {
+        width: 600px;
+    }
+
+    .container img {
+        max-height: 100%;
+        max-width: 100%;
+    }
     </style>
 </head>
 <body layout="column" ng-controller="photoCtrl as ctrl">
@@ -174,6 +183,9 @@
                         </md-card-title-media>
                     </md-card-content>
                     <md-card-actions layout="row" layout-align="end">
+                        <md-button ng-click="showZoom($event, card.src)">
+                            ZOOM
+                        </md-button>
                     </md-card-actions>
                 </md-card>
             </div>
