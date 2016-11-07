@@ -534,13 +534,13 @@
 
                                 for (var k = 0; k < $rootScope.labels.length; k++) {
                                     if ($rootScope.labels[k] === l) {
-                                        $rootScope.labels.splice(i, 1);
+                                        $rootScope.labels.splice(k, 1);
                                         break;
                                     }
                                 }
                                 for (var j = 0; j < $rootScope.selected.length; j++) {
                                     if ($rootScope.selected[j] === l) {
-                                        $rootScope.selected.splice(i, 1);
+                                        $rootScope.selected.splice(j, 1);
                                         break;
                                     }
                                 }
@@ -605,11 +605,11 @@
                 '  <md-content layout-padding>' +
                 '    <div class="container"><img src="{{ image }}"/></div>' +
                 '  </md-content>' +
-                '  <div class="md-actions">' +
+                '  <md-dialog-actions>' +
                 '    <md-button ng-click="cancel()">' +
                 '      Close' +
                 '    </md-button>' +
-                '  </div>' +
+                '  </md-dialog-actions>' +
                 '</md-dialog>',
                 targetEvent: ev,
                 clickOutsideToClose:true,
