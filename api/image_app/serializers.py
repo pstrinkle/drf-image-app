@@ -72,6 +72,18 @@ class LabelSerializer(serializers.HyperlinkedModelSerializer):
         count = Image.objects.filter(labels__in=[obj.id]).count()
         return count
 
+    def create(self, validated_data):
+        """
+        Create the user.
+        """
+
+        validated_data['value'] = validated_data['value'].lower()
+
+        label = Label.objects.create(**validated_data)
+        label.save()
+
+        return label
+
     class Meta:
         model = apps.get_model('image_app.Label')
         fields = ('value', 'count', 'id')
