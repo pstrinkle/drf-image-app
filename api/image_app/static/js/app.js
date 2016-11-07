@@ -485,14 +485,14 @@
                                         delete $rootScope.labelCnts[l];
 
                                         for (var k = 0; k < $rootScope.labels.length; k++) {
-                                            if ($rootScope.labels[i] === l) {
-                                                $rootScope.labels[i] = v;
+                                            if ($rootScope.labels[k] === l) {
+                                                $rootScope.labels[k] = v;
                                                 break;
                                             }
                                         }
                                         for (var j = 0; j < $rootScope.selected.length; j++) {
-                                            if ($rootScope.selected[i] === l) {
-                                                $rootScope.selected[i] = v;
+                                            if ($rootScope.selected[j] === l) {
+                                                $rootScope.selected[j] = v;
                                                 break;
                                             }
                                         }
@@ -513,7 +513,7 @@
                 /* Walk through the list of items to delete, and delete them. */
                 for (var i = 0; i < $scope.toDelete.length; i++) {
                     var label = $scope.toDelete[i];
-                    var label_id = $scope.labelLookup[l];
+                    var label_id = $scope.labelLookup[label];
 
                     console.log('deleting label: ' + label + ' id: ' + label_id);
 
@@ -533,14 +533,14 @@
                                 delete $rootScope.labelCnts[l];
 
                                 for (var k = 0; k < $rootScope.labels.length; k++) {
-                                    if ($rootScope.labels[i] === l) {
-                                        $rootScope.labels.splice(i, 1);
+                                    if ($rootScope.labels[k] === l) {
+                                        $rootScope.labels.splice(k, 1);
                                         break;
                                     }
                                 }
                                 for (var j = 0; j < $rootScope.selected.length; j++) {
-                                    if ($rootScope.selected[i] === l) {
-                                        $rootScope.selected.splice(i, 1);
+                                    if ($rootScope.selected[j] === l) {
+                                        $rootScope.selected.splice(j, 1);
                                         break;
                                     }
                                 }
@@ -605,11 +605,11 @@
                 '  <md-content layout-padding>' +
                 '    <div class="container"><img src="{{ image }}"/></div>' +
                 '  </md-content>' +
-                '  <div class="md-actions">' +
+                '  <md-dialog-actions>' +
                 '    <md-button ng-click="cancel()">' +
                 '      Close' +
                 '    </md-button>' +
-                '  </div>' +
+                '  </md-dialog-actions>' +
                 '</md-dialog>',
                 targetEvent: ev,
                 clickOutsideToClose:true,
