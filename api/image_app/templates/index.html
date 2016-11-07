@@ -15,29 +15,21 @@
     <link rel="stylesheet" href="{% static 'bower_components/angular-material/angular-material.min.css' %}">
 
     <style>
-
-    .deckgrid[deckgrid]::before {
-        /* Specifies that the grid should have a maximum of 4 columns. Each column will have the classes 'column' and 'column-1-4' */
-        content: '4 .column.column-1-4';
-        font-size: 0; /* See https://github.com/akoenig/angular-deckgrid/issues/14#issuecomment-35728861 */
-        visibility: hidden;
-    }
-
-    .deckgrid .column { float: left; }
-    .deckgrid .column-1-4 { width: 25%; }
-
-    .deckgrid .column-1-1 { width: 100%; }
-
-    @media screen and (max-width: 480px){
-        .deckgrid[deckgrid]::before { content: '1 .column.column-1-1'; }
-    }
-
     input[type="checkbox"] + label {
         border: white 2px solid;
     }
 
     input[type="checkbox"]:checked + label {
         border: blue 2px solid;
+    }
+
+    .container {
+        width: 600px;
+    }
+
+    .container img {
+        max-height: 100%;
+        max-width: 100%;
     }
     </style>
 </head>
@@ -105,32 +97,50 @@
                     <li ng-click="selectUnlabeled($event)" id="unlabeledLi">
                         <a href="#" onclick="return false;">unlabeled</a>
                     </li>
-                    <li ng-repeat="label in labels.sort()"
-                        ng-click="selectLabel($event)">
-                        <a href="#" onclick="return false;">{{label}} <span class="badge">{{labelCnts[label]}}</span></a>
-                    </li>
                 </ul>
+                <md-chips ng-model="labels"
+                          readonly="true">
+                    <md-chip-template ng-click="selectLabel($chip)">
+                        <span>{{$chip}}</span>
+                        <em>({{labelCnts[$chip]}})</em>
+                    </md-chip-template>
+                </md-chips>
             </div>
 
             <div>
                 <h3>Selected Labels {{selected.length}}</h3>
-                <ul class="nav nav-pills">
-                    <li class="active"
-                        ng-repeat="label in selected.sort()"
-                        ng-click="deselectLabel($event)">
-                        <a href="#" onclick="return false;">{{label}} <span class="badge">{{labelCnts[label]}}</span></a>
-                    </li>
-                </ul>
+                <md-chips ng-model="selected"
+                          readonly="true"
+                          md-removable="true"
+                          md-on-remove="deselectLabel($chip)">
+                    <md-chip-template>
+                        <span>{{$chip}}</span>
+                        <em>({{labelCnts[$chip]}})</em>
+                    </md-chip-template>
+                </md-chips>
             </div>
 
             <div>
-                <div>
-                    <md-button class="md-raised md-cornered md-primary" ng-click="download()">
+                <div layout="row">
+                    <md-button class="md-primary md-raised md-cornered" ng-click="download()">
                         Download <span class="badge" style="color:black;background-color:white;">{{downloadCount}}</span>
                     </md-button>
-                    <md-button class="md-raised md-cornered md-primary" ng-click="downloadAll()">
+                    <md-button class="md-primary md-raised md-cornered" ng-click="downloadAll()">
                         Download All <span class="badge" style="color:black;background-color:white;">{{photos.length}}</span>
                     </md-button>
+
+                        <!--
+                    <md-select ng-model="weapon" placeholder="default" class="md-no-underline">
+                        <md-option value="axe">10</md-option>
+                        <md-option value="sword">50</md-option>
+                        <md-option value="wand">100</md-option>
+                    </md-select>
+                    -->
+
+                    <md-button class="md-primary md-raised md-cornered" ng-click="prevPage()">{{prevPageNum}}</md-button>
+                    <md-button class="md-primary md-raised md-cornered">{{currentPage}}</md-button>
+                    <md-button class="md-primary md-raised md-cornered" ng-click="nextPage()">{{nextPageNum}}</md-button>
+                    <md-button class="md-primary md-raised" ng-click="showAdvanced($event)">Edit Labels</md-button>
                 </div>
             </div>
 
@@ -146,7 +156,17 @@
                                       readonly="false"
                                       md-removable="true"
                                       md-on-add="linkLabel($chip, card.id)"
-                                      md-on-remove="removeLabel($chip, card.id)"></md-chips>
+                                      md-on-remove="removeLabel($chip, card.id)"
+                                      md-require-match="false"
+                                      md-autocomplete-snap>
+                                <md-autocomplete
+                                    md-selected-item="selectedItem"
+                                    md-search-text="searchText"
+                                    md-items="item in querySearch(searchText)"
+                                    md-item-text="item">
+                                    <span md-highlight-text="searchText">{{item}}</span>
+                                </md-autocomplete>
+                            </md-chips>
                         </md-card-title-text>
                     </md-card-title>
                     <md-card-content>
@@ -163,6 +183,9 @@
                         </md-card-title-media>
                     </md-card-content>
                     <md-card-actions layout="row" layout-align="end">
+                        <md-button ng-click="showZoom($event, card.src)">
+                            ZOOM
+                        </md-button>
                     </md-card-actions>
                 </md-card>
             </div>
@@ -186,7 +209,6 @@
     <script src="{% static 'bower_components/angular-animate/angular-animate.min.js' %}"></script>
     <script src="{% static 'bower_components/angular-aria/angular-aria.min.js' %}"></script>
     <script src="{% static 'bower_components/angular-cookies/angular-cookies.min.js' %}"></script>
-    <script src="{% static 'bower_components/angular-deckgrid/angular-deckgrid.js' %}"></script>
     <script src="{% static 'bower_components/angular-messages/angular-messages.min.js' %}"></script>
     <script src="{% static 'bower_components/angular-resource/angular-resource.min.js' %}"></script>
     <script src="{% static 'bower_components/ngSticky/dist/sticky.min.js' %}"></script>

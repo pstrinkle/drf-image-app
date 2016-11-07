@@ -2,7 +2,6 @@
     //'use strict';
 
     var ImgApp = angular.module('image_app', [
-        'akoenig.deckgrid',
         'ngFileUpload',
         'ngCookies',
         'sticky',
@@ -159,7 +158,7 @@
             console.log('list labels.response: ' + JSON.stringify(response));
 
             angular.forEach(response.data, function(element, index) {
-                console.log('label: ' + element.value);
+                console.log('label: ' + element.value + ' id: ' + element.id);
 
                 $scope.addLabel(element.value, element.id, element.count);
             });
@@ -170,6 +169,80 @@
         });
     }
 
+    var handleImages = function($scope, response) {
+
+        $scope.photos.length = 0;
+        emptyDictionary($scope.downloadSelection);
+        $scope.downloadCount = 0;
+
+        jQuery('#listProgress').show();
+
+        console.log('total items: ' + response.data.count);
+
+        //"next": "http://127.0.0.1:8000/api/v1/image?page=2",
+        //"previous": null
+
+        if (response.data.previous == null) {
+            $scope.prevPageNum = 'n/a';
+            $scope.currentPage = 1;
+            if (response.data.next) {
+                $scope.nextPageNum = 2;
+            } else {
+                $scope.nextPageNum = 'n/a';
+            }
+        } else {
+            /* previous page isn't null, but we may be in the middle or the end. */
+
+            /* previous page could be the 0th page, and then won't have the page parameter. */
+
+            var prev = response.data.previous;
+            var pieces = prev.split('?');
+            if (pieces.length > 1) {
+                /* labels and/or page specified */
+                var params = pieces[1].split('&');
+                var page = -1;
+
+                angular.forEach(params, function(element, index) {
+                    var these = element.split('=');
+                    if (these[0] === 'page') {
+                        page = parseInt(these[1]);
+                    }
+                });
+
+                $scope.prevPageNum = page;
+                $scope.currentPage = page + 1;
+                if (response.data.next) {
+                    $scope.nextPageNum = page + 2;
+                } else {
+                    $scope.nextPageNum = 'n/a';
+                }
+            } else {
+                /* absolutely zero parameters; prev is the 1st page. */
+                $scope.prevPageNum = 1;
+                $scope.currentPage = 2;
+
+                if (response.data.next) {
+                    $scope.nextPageNum = 3;
+                } else {
+                    $scope.nextPageNum = 'n/a';
+                }
+            }
+        }
+
+        $scope.prevLink = response.data.previous;
+        $scope.nextLink = response.data.next;
+
+        // temp code.
+        angular.forEach(response.data.results, function(element, index) {
+            $scope.addImage(element.id, element.thumbnail, element.labels);
+        });
+
+        delete response.data.results;
+        console.log('response elements: ' + JSON.stringify(response.data, null, 2));
+
+        jQuery('#listProgress').hide();
+    }
+
     var listUnlabeled = function($scope, $http) {
         $http({
             url: '/api/v1/image',
@@ -178,10 +251,7 @@
         }).then(function success(response) {
             console.log('list images.response: ' + JSON.stringify(response));
 
-            // temp code.
-            angular.forEach(response.data, function(element, index) {
-                $scope.addImage(element.id, element.thumbnail, element.labels);
-            });
+            handleImages($scope, response);
 
         }, function error(data) {
             console.log(data);
@@ -196,14 +266,7 @@
         }).then(function success(response) {
             //console.log('list images.response: ' + JSON.stringify(response));
 
-            jQuery('#listProgress').show();
-
-            // temp code.
-            angular.forEach(response.data, function(element, index) {
-                $scope.addImage(element.id, element.thumbnail, element.labels);
-            });
-
-            jQuery('#listProgress').hide();
+            handleImages($scope, response);
 
         }, function error(data) {
             console.log(data);
@@ -219,14 +282,7 @@
         }).then(function success(response) {
             //console.log('list images.response: ' + JSON.stringify(response));
 
-            jQuery('#listProgress').show();
-
-            // temp code.
-            angular.forEach(response.data, function(element, index) {
-                $scope.addImage(element.id, element.thumbnail, element.labels);
-            });
-
-            jQuery('#listProgress').hide();
+            handleImages($scope, response);
 
         }, function error(data) {
             console.log(data);
@@ -247,6 +303,11 @@
         $rootScope.loggedin = false;
 
         $rootScope.photos = [];
+        $rootScope.prevPageNum = -1;
+        $rootScope.currentPage = 0;
+        $rootScope.nextPageNum = 1;
+        $rootScope.prevLink = null;
+        $rootScope.nextLink = null;
 
         $rootScope.unlabeledSelected = false;
         $rootScope.selected = []; // used for filtering the images.
@@ -294,11 +355,6 @@
             }
 
             $rootScope.selected.length = 0;
-
-            $rootScope.photos.length = 0;
-            emptyDictionary($rootScope.downloadSelection);
-            $rootScope.downloadCount = 0;
-
             listImages($rootScope, $http);
         }
 
@@ -313,10 +369,6 @@
             }
 
             /* this isn't the most efficient. */
-            $rootScope.photos.length = 0;
-            emptyDictionary($rootScope.downloadSelection);
-            $rootScope.downloadCount = 0;
-
             filterImages($rootScope, $http);
         }
 
@@ -329,11 +381,6 @@
                     break;
                 }
             }
-
-            /* this isn't the most efficient. */
-            $rootScope.photos.length = 0;
-            emptyDictionary($rootScope.downloadSelection);
-            $rootScope.downloadCount = 0;
 
             filterImages($rootScope, $http);
         }
@@ -388,8 +435,206 @@
         jQuery('#uploadtrackingContainer').hide();
     });
 
-    ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$http', '$location', '$window', '$q', 'Upload',
-                                    function($rootScope, $scope, $http, $location, $window, $q, Upload) {
+    ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$mdDialog', '$http', '$location', '$window', '$q', 'Upload',
+                                    function($rootScope, $scope, $mdDialog, $http, $location, $window, $q, Upload) {
+
+        function DialogController($scope, $mdDialog) {
+            $scope.hide = function() {
+                $mdDialog.hide();
+            };
+
+            $scope.cancel = function() {
+                $mdDialog.cancel();
+            };
+
+            $scope.save = function() {
+                var tasks = [];
+
+                /* Walk through the list of items (not being deleted) and see if they've changed */
+                for (var i = 0; i < $scope.labels.length; i++) {
+                    var label = $scope.labels[i];
+
+                    var $inputField = jQuery('#edit_label_' + label);
+                    var value = $inputField.val().trim();
+
+                    if (label != value) {
+                        console.log('label changed: was: ' + label + ' now: ' + value);
+
+                        /* did they delete it? -- */
+                        if ($scope.toDelete.indexOf(label) != -1) {
+                            console.log('they deleted it');
+                        } else {
+                            (function () {
+                                var l = label;
+                                var v = value;
+                                var lid = $scope.labelLookup[label];
+
+                                var updateLabel = function() {
+                                    $http({
+                                        url: '/api/v1/label/' + lid,
+                                        method: 'PUT',
+                                        data: {
+                                            value: v,
+                                        },
+                                    }).then(function success(response) {
+
+                                        $rootScope.labelLookup[v] = $rootScope.labelLookup[l];
+                                        $rootScope.labelCnts[v] = $rootScope.labelCnts[l];
+
+                                        delete $rootScope.labelLookup[l];
+                                        delete $rootScope.labelCnts[l];
+
+                                        for (var k = 0; k < $rootScope.labels.length; k++) {
+                                            if ($rootScope.labels[i] === l) {
+                                                $rootScope.labels[i] = v;
+                                                break;
+                                            }
+                                        }
+                                        for (var j = 0; j < $rootScope.selected.length; j++) {
+                                            if ($rootScope.selected[i] === l) {
+                                                $rootScope.selected[i] = v;
+                                                break;
+                                            }
+                                        }
+
+                                        console.log('successfully renamed it');
+                                    }, function error(data) {
+                                        console.log(data);
+                                        console.log('error returned!');
+                                    });
+                                }
+
+                                tasks.push(updateLabel);
+                            })();
+                        }
+                    }
+                }
+
+                /* Walk through the list of items to delete, and delete them. */
+                for (var i = 0; i < $scope.toDelete.length; i++) {
+                    var label = $scope.toDelete[i];
+                    var label_id = $scope.labelLookup[l];
+
+                    console.log('deleting label: ' + label + ' id: ' + label_id);
+
+                    (function () {
+                        var l = label;
+                        var lid = $scope.labelLookup[label];
+
+                        var deleteLabel = function() {
+                            console.log('deleting: ' + l);
+
+                            $http({
+                                url: '/api/v1/label/' + lid,
+                                method: 'DELETE',
+                            }).then(function success(response) {
+                                console.log('del label.response: ' + JSON.stringify(response));
+                                delete $rootScope.labelLookup[l];
+                                delete $rootScope.labelCnts[l];
+
+                                for (var k = 0; k < $rootScope.labels.length; k++) {
+                                    if ($rootScope.labels[i] === l) {
+                                        $rootScope.labels.splice(i, 1);
+                                        break;
+                                    }
+                                }
+                                for (var j = 0; j < $rootScope.selected.length; j++) {
+                                    if ($rootScope.selected[i] === l) {
+                                        $rootScope.selected.splice(i, 1);
+                                        break;
+                                    }
+                                }
+                            }, function error(data) {
+                                console.log(data);
+                                console.log('error returned!');
+                            });
+                        }
+
+                        tasks.push(deleteLabel);
+                    })();
+                }
+
+                var hideThis = function() {
+                    $mdDialog.hide();
+                }
+
+                tasks.push(hideThis);
+
+                console.log('starting the actions');
+                serial(tasks);
+            }
+
+            $scope.toDelete = [];
+
+            $scope.del = function(label) {
+                console.log('try deleting label: ' + label);
+                $scope.toDelete.push(label);
+
+                jQuery('#edit_label_' + label).css('text-decoration', 'line-through');
+            }
+        }
+
+        $scope.showAdvanced = function(ev) {
+            $mdDialog.show({
+                controller: DialogController,
+                templateUrl: 'dialog1.tmpl.html',
+                parent: angular.element(document.body),
+                targetEvent: ev,
+                clickOutsideToClose:true,
+                fullscreen: false,
+                scope: $scope,        // use parent scope in template
+                preserveScope: true,  // do not forget this if use parent scope
+            });
+        };
+
+        function ZoomController($scope, $mdDialog, image) {
+            $scope.cancel = function() {
+                $mdDialog.cancel();
+            };
+
+            $scope.image = image;
+        }
+
+        $scope.showZoom = function(ev, image_src) {
+            image_src = image_src.replace('thumbnails/', '');
+
+            $mdDialog.show({
+                controller: ZoomController,
+                template:
+                '<md-dialog>' +
+                '  <md-content layout-padding>' +
+                '    <div class="container"><img src="{{ image }}"/></div>' +
+                '  </md-content>' +
+                '  <div class="md-actions">' +
+                '    <md-button ng-click="cancel()">' +
+                '      Close' +
+                '    </md-button>' +
+                '  </div>' +
+                '</md-dialog>',
+                targetEvent: ev,
+                clickOutsideToClose:true,
+                fullscreen: true,
+                locals: {
+                    image: image_src
+                }
+            });
+        }
+
+        $scope.prevPage = function() {
+            $http({
+                url: $scope.prevLink,
+            }).then(function success(response) {
+                handleImages($rootScope, response);
+            });
+        }
+
+        $scope.nextPage = function() {
+            $http({
+                url: $scope.nextLink,
+            }).then(function success(response) {
+                handleImages($rootScope, response);
+            });
+        }
 
         $scope.createLabel = function() {
             $http({
@@ -431,36 +676,27 @@
             return false;
         }
 
-        $scope.selectLabel = function(e) {
-            console.log('clicked', $(e.target).text());
-            var text = '';
-
+        $scope.selectLabel = function(chip) {
             if ($scope.unlabeledSelected) {
                 $scope.unlabeledSelected = false;
                 jQuery('#unlabeledLi').removeClass('active');
             }
 
+            /*
             if ($(e.target).hasClass('badge')) {
                 text = $(e.target).parent().text();
             } else {
                 text = $(e.target).text();
             }
+            */
 
-            var pieces = text.split(' ');
-            pieces.pop();
-
-            var filter = pieces.join(' ').trim();
+            var filter = chip.trim();
             console.log('filter: ' + filter);
             $scope.addFilter(filter);
-
-            e.preventDefault();
-            return false;
         }
 
-        $scope.deselectLabel = function(e) {
-            console.log('clicked', $(e.target).text());
-            var text = '';
-
+        $scope.deselectLabel = function(chip) {
+            /*
             if ($(e.target).hasClass('badge')) {
                 text = $(e.target).parent().text();
             } else {
@@ -469,14 +705,12 @@
 
             var pieces = text.split(' ');
             pieces.pop();
+            */
 
-            var filter = pieces.join(' ').trim();
+            var filter = chip.trim();
 
             console.log('filter: ' + filter);
             $scope.delFilter(filter);
-
-            e.preventDefault();
-            return false;
         }
 
         $scope.applyLabelMultiplePhotos = function() {
@@ -556,10 +790,10 @@
 
                 $http({
                     url: '/api/v1/image/' + image_id + '/label/' + label_id,
-                    method: 'DEL',
+                    method: 'DELETE',
                 }).then(function success(resp) {
                     /* the label count should go up by 1 */
-                    $scope.labelCnts[ll] -= 1;
+                    $scope.labelCnts[label] -= 1;
 
                     /* we've added it to our image; move forward */
                     $http({
@@ -600,17 +834,27 @@
             if (label && label.length > 0) {
                 //labels = label.split(',');
                 var labelsToAdd = [];
-
-                console.log('labels: ' + JSON.stringify(labels));
-
-                for (var i = 0; i < labels.length; i++) {
-                    var ll = labels[i].trim();
-                    console.log('ll: ' + ll);
-                    labelsToAdd.push(ll);
-                }
+                labelsToAdd.push(label);
 
                 addLabels($rootScope, $http, labelsToAdd, 0, image_id);
             }
+        }
+
+        $rootScope.selectedItem = null;
+        $rootScope.searchText = null;
+        $rootScope.querySearch = querySearch;
+
+        function querySearch (query) {
+            var results = query ? $rootScope.labels.filter(createFilterFor(query)) : [];
+            return results;
+        }
+
+        function createFilterFor(query) {
+            var lowercaseQuery = angular.lowercase(query);
+
+            return function filterFn(label) {
+                return (label.indexOf(lowercaseQuery) === 0);
+            };
         }
 
         $scope.selectForDownload = function(e) {
