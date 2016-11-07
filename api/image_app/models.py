@@ -9,6 +9,9 @@ from easy_thumbnails import fields
 
 saved_file.connect(generate_aliases_global)
 
+from django.core.validators import RegexValidator
+
+alphanumeric = RegexValidator(r'^[0-9a-zA-Z]*$', 'Only alphanumeric characters are allowed.')
 
 #from easy_thumbnails.templatetags.thumbnail import thumbnail_url
 #thumbnail_url = thumbnail_url(model_with_an_image, 'small')
@@ -46,5 +49,5 @@ class Label(models.Model):
     These are how we tag images.
     """
 
-    value = models.CharField(max_length=256, unique=True)
+    value = models.CharField(max_length=256, unique=True, validators=[alphanumeric])
 
