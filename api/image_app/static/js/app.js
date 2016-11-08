@@ -9,14 +9,13 @@
         'ngMaterial'
     ]);
 
-    ImgApp.config(function($locationProvider) {
-    /*
-        $locationProvider.html5Mode({
-            enabled: true,
-            requireBase: false
-        });
-    */
-    });
+    ImgApp.config(function($locationProvider) {});
+
+    function b64EncodeUnicode(str) {
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+            return String.fromCharCode('0x' + p1);
+        }));
+    }
 
     /* super basic version from http://www.codeducky.org/q-serial/
      * doesn't really handle failures at all!
@@ -291,7 +290,7 @@
     }
 
     var loggedinInit = function($scope, $http) {
-        jQuery('#loginformarea').slideUp();
+        jQuery('#loginformarea').hide();
 
         // they loaded logged in, so let's load everything to start with.
         listLabels($scope, $http);
@@ -435,9 +434,12 @@
         jQuery('#uploadtrackingContainer').hide();
     });
 
-    ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$mdDialog', '$http', '$location', '$window', '$q', 'Upload',
-                                    function($rootScope, $scope, $mdDialog, $http, $location, $window, $q, Upload) {
+    ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$mdDialog', '$http',
+                                    '$location', '$cookies', '$window', '$q', 'Upload',
+                                    function($rootScope, $scope, $mdDialog, $http,
+                                             $location, $cookies, $window, $q, Upload) {
 
+        /* Start edit labels dialog code */
         function DialogController($scope, $mdDialog) {
             $scope.hide = function() {
                 $mdDialog.hide();
@@ -586,7 +588,9 @@
                 preserveScope: true,  // do not forget this if use parent scope
             });
         };
+        /* Stop edit labels dialog code */
 
+        /* Start image zoom dialog code */
         function ZoomController($scope, $mdDialog, image) {
             $scope.cancel = function() {
                 $mdDialog.cancel();
@@ -600,17 +604,7 @@
 
             $mdDialog.show({
                 controller: ZoomController,
-                template:
-                '<md-dialog>' +
-                '  <md-content layout-padding>' +
-                '    <div class="container"><img src="{{ image }}"/></div>' +
-                '  </md-content>' +
-                '  <md-dialog-actions>' +
-                '    <md-button ng-click="cancel()">' +
-                '      Close' +
-                '    </md-button>' +
-                '  </md-dialog-actions>' +
-                '</md-dialog>',
+                templateUrl: 'zoom.tmpl.html',
                 targetEvent: ev,
                 clickOutsideToClose:true,
                 fullscreen: true,
@@ -619,7 +613,9 @@
                 }
             });
         }
+        /* Stop image zoom dialog code */
 
+        /* Page Buttons. */
         $scope.prevPage = function() {
             $http({
                 url: $scope.prevLink,
@@ -636,6 +632,7 @@
             });
         }
 
+        /* Create Label */
         $scope.createLabel = function() {
             $http({
                 url: 'api/v1/label',
@@ -653,6 +650,8 @@
             });
         }
 
+        /* Toolbar controls. */
+        /* Select unlabeled filter. */
         $scope.selectUnlabeled = function(e) {
             console.log('clicked unlabeled');
 
@@ -676,47 +675,26 @@
             return false;
         }
 
+        /* Select filter. */
         $scope.selectLabel = function(chip) {
             if ($scope.unlabeledSelected) {
                 $scope.unlabeledSelected = false;
                 jQuery('#unlabeledLi').removeClass('active');
             }
 
-            /*
-            if ($(e.target).hasClass('badge')) {
-                text = $(e.target).parent().text();
-            } else {
-                text = $(e.target).text();
-            }
-            */
-
             var filter = chip.trim();
             console.log('filter: ' + filter);
             $scope.addFilter(filter);
         }
 
+        /* De-select filter. */
         $scope.deselectLabel = function(chip) {
-            /*
-            if ($(e.target).hasClass('badge')) {
-                text = $(e.target).parent().text();
-            } else {
-                text = $(e.target).text();
-            }
-
-            var pieces = text.split(' ');
-            pieces.pop();
-            */
-
             var filter = chip.trim();
 
             console.log('filter: ' + filter);
             $scope.delFilter(filter);
         }
 
-        $scope.applyLabelMultiplePhotos = function() {
-            var selected = $scope.multiLabel;
-            console.log('apply button clicked for: ' + selected);
-        }
 
         $scope.download = function() {
             files = Object.keys($scope.downloadSelection);
@@ -733,10 +711,7 @@
             openDownloadLink($window, $location, files);
         }
 
-        var closeUpload = function() {
-            jQuery('#uploadtrackingContainer').fadeOut();
-        }
-
+        /* Image upload. */
         var uploadImageOnce = function() {
             var f = $scope.uploadQueue.shift();
             if (!f) {
@@ -764,6 +739,10 @@
 
         // for multiple files:
         $scope.uploadFiles = function(files) {
+            var closeUpload = function() {
+                jQuery('#uploadtrackingContainer').fadeOut();
+            }
+
             if (files && files.length) {
                 var tasks = [];
 
@@ -779,6 +758,7 @@
             }
         }
 
+        /* Remove a label from an image. */
         $scope.removeLabel = function(chip, image_id) {
             console.log('new chip: ' + chip);
             console.log('clicked: ' + image_id);
@@ -825,6 +805,7 @@
             }
         }
 
+        /* Add a label to an image. */
         $scope.linkLabel = function(chip, image_id) {
             console.log('new chip: ' + chip);
             console.log('clicked: ' + image_id);
@@ -840,6 +821,7 @@
             }
         }
 
+        /* autocomplete for adding labels. */
         $rootScope.selectedItem = null;
         $rootScope.searchText = null;
         $rootScope.querySearch = querySearch;
@@ -857,6 +839,7 @@
             };
         }
 
+        /* Selecting an image. */
         $scope.selectForDownload = function(e) {
             var id = jQuery(e.target).attr('id').replace('select_', '');
             console.log('selected for download: ' + id);
@@ -869,57 +852,8 @@
 
             $rootScope.downloadCount = Object.keys($rootScope.downloadSelection).length;
         }
-    }]);
 
-    ImgApp.controller('loginCtrl', ['$rootScope', '$scope', '$http', '$cookies',
-                                    function($rootScope, $scope, $http, $cookies) {
-
-        function b64EncodeUnicode(str) {
-            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
-                return String.fromCharCode('0x' + p1);
-            }));
-        }
-
-        $scope.login = function() {
-            var u = $scope.username;
-            var p = $scope.password;
-
-            console.log('login with: ' + u + ', password: ' + p);
-
-            $http({
-                url: '/auth/login/',
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Basic ' + b64EncodeUnicode(u + ':' + p)
-                }
-            }).then(function success(response) {
-                console.log('Logged in!', new Date());
-                console.log('response: ' + JSON.stringify(response));
-
-                $rootScope.loggedin = true;
-                $rootScope.setUser(response.data.user);
-                $rootScope.setToken(response.data.token);
-
-                $http({
-                    url: '/api/v1/user/1/secondarylogin',
-                    method: 'POST',
-                    data: {
-                        username: u,
-                        password: p
-                    },
-                }).then(function success(response) {
-                    console.log('logged in successfully!');
-
-                    loggedinInit($rootScope, $http);
-                }, function error(data) {
-                    console.log('failed to login');
-                });
-            }, function error(data) {
-                console.log(data);
-                console.log('error returned!');
-            });
-        }
-
+        /* Logout. */
         $scope.logout = function() {
             $http({
                 url: '/auth/logout/',
@@ -932,6 +866,72 @@
                 console.log(['failed to log out', res]);
             });
         }
+
+        /* Handle login. */
+        function LoginController($scope, $mdDialog) {
+            $scope.hide = function() {
+                $mdDialog.hide();
+            };
+
+            $scope.cancel = function() {
+                $mdDialog.cancel();
+            };
+
+            $scope.login = function() {
+                var u = $scope.username;
+                var p = $scope.password;
+
+                console.log('login with: ' + u + ', password: ' + p);
+
+                $http({
+                    url: '/auth/login/',
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + b64EncodeUnicode(u + ':' + p)
+                    }
+                }).then(function success(response) {
+                    console.log('Logged in!', new Date());
+                    console.log('response: ' + JSON.stringify(response));
+
+                    $rootScope.loggedin = true;
+                    $rootScope.setUser(response.data.user);
+                    $rootScope.setToken(response.data.token);
+
+                    $http({
+                        url: '/api/v1/user/1/secondarylogin',
+                        method: 'POST',
+                        data: {
+                            username: u,
+                            password: p
+                        },
+                    }).then(function success(response) {
+                        console.log('logged in successfully!');
+
+                        $mdDialog.cancel();
+
+                        loggedinInit($rootScope, $http);
+                    }, function error(data) {
+                        console.log('failed to login');
+                    });
+                }, function error(data) {
+                    console.log(data);
+                    console.log('error returned!');
+                });
+            }
+        }
+
+        $scope.showLogin = function(ev) {
+            $mdDialog.show({
+                controller: LoginController,
+                templateUrl: 'login.tmpl.html',
+                parent: angular.element(document.body),
+                targetEvent: ev,
+                clickOutsideToClose:true,
+                fullscreen: false,
+                scope: $scope,        // use parent scope in template
+                preserveScope: true,  // do not forget this if use parent scope
+            });
+        };
     }]);
 
     //https://richardtier.com/2014/03/15/authenticate-using-django-rest-framework-endpoint-and-angularjs/

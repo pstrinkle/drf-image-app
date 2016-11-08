@@ -7,7 +7,8 @@
                 <h2>Edit Labels</h2>
                 <span flex></span>
                 <md-button class="md-icon-button" ng-click="cancel()">
-                    <md-icon md-svg-src="{% static 'img/icons/ic_close_white_24px.svg' %}" aria-label="Close dialog"></md-icon>
+                    <md-icon md-svg-src="{% static 'img/icons/ic_close_white_24px.svg' %}"
+                             aria-label="Close dialog"></md-icon>
                 </md-button>
             </div>
         </md-toolbar>
@@ -15,16 +16,19 @@
 
         <md-dialog-content layout-padding>
             <p>You can edit or delete labels</p>
-            <!-- <md-list-item ng-repeat="label in labels"> -->
+            <!-- <md-list-item ng-repeat="label in labels | orderBy"> -->
             <div ng-repeat="label in labels | orderBy">
                 <md-input-container>
-                    <input id="edit_label_{{ label }}" value="{{ label }}" aria-label="edit label: {{ label }}">
+                    <input id="edit_label_{{ label }}"
+                           value="{{ label }}"
+                           aria-label="edit label: {{ label }}">
                 </md-input-container>
                 <md-button class="md-icon-button" ng-click="del(label)">
                     <md-tooltip>
                         Mark for delete
                     </md-tooltip>
-                    <md-icon md-svg-src="/static/img/icons/ic_delete_black_24px.svg" aria-label="Delete label"></md-icon>
+                    <md-icon md-svg-src="/static/img/icons/ic_delete_black_24px.svg"
+                             aria-label="Delete label"></md-icon>
                 </md-button>
             </div>
             <!-- </md-list-item> -->

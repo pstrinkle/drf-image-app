@@ -1,0 +1,29 @@
+{% load staticfiles %}
+
+<md-dialog aria-label="Zoom">
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>Zoom zoom</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="cancel()">
+                <md-icon md-svg-src="{% static 'img/icons/ic_close_white_24px.svg' %}"
+                         aria-label="Close dialog"></md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+    {% verbatim %}
+
+    <md-dialog-content layout-padding>
+        <md-content>
+            <div class="container"><img src="{{ image }}"/></div>
+        </md-content>
+    </md-dialog-content>
+
+    <md-dialog-actions>
+        <md-button ng-click="cancel()">
+            Close
+        </md-button>
+    </md-dialog-actions>
+
+    {% endverbatim %}
+</md-dialog>
