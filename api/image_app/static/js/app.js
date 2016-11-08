@@ -290,7 +290,7 @@
     }
 
     var loggedinInit = function($scope, $http) {
-        //jQuery('#loginformarea').slideUp();
+        jQuery('#loginformarea').hide();
 
         // they loaded logged in, so let's load everything to start with.
         listLabels($scope, $http);
@@ -604,17 +604,7 @@
 
             $mdDialog.show({
                 controller: ZoomController,
-                template:
-                '<md-dialog>' +
-                '  <md-content layout-padding>' +
-                '    <div class="container"><img src="{{ image }}"/></div>' +
-                '  </md-content>' +
-                '  <md-dialog-actions>' +
-                '    <md-button ng-click="cancel()">' +
-                '      Close' +
-                '    </md-button>' +
-                '  </md-dialog-actions>' +
-                '</md-dialog>',
+                templateUrl: 'zoom.tmpl.html',
                 targetEvent: ev,
                 clickOutsideToClose:true,
                 fullscreen: true,
