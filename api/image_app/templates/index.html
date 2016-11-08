@@ -38,33 +38,6 @@
 
     <!-- column item 0 -->
 
-    <!-- login form area -->
-    <div flex id="loginformarea">
-        <md-content layout-gt-sm="row" layout-padding>
-            <div layout="column" ng-controller="loginCtrl" class="md-inline-form">
-                <div flex>
-                    <md-input-container class="md-block">
-                        <label>Username</label>
-                        <input ng-model="username" />
-                    </md-input-container>
-                </div>
-
-                <div flex>
-                    <md-input-container class="md-block">
-                        <label>Password</label>
-                        <input ng-model="password" type="password" />
-                    </md-input-container>
-                </div>
-
-                <div flex>
-                    <md-button class="md-raised md-cornered md-primary" ng-click="login()">Login</md-button>
-                </div>
-            </div>
-        </md-content>
-    </div>
-
-    <!-- column item 1 -->
-
     <!-- Create new things controls -->
     <div flex>
         <md-content layout-padding>
@@ -76,6 +49,10 @@
                         </div>
                         <md-button class="md-raised md-cornered md-primary">create</md-button>
                     </form>
+                </div>
+
+                <div flex>
+                    <md-button class="md-primary md-raised" ng-click="showLogin($event)">Login</md-button>
                 </div>
 
                 <div flex>
