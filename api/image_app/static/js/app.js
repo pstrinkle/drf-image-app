@@ -82,13 +82,8 @@
                         console.log('found photo pull after adding labels');
                         console.log('unlabeledSelected: ' + $scope.unlabeledSelected);
 
-                        // if they're unlabeled filtering, hide this image now.
-                        if ($scope.unlabeledSelected) {
-                            $scope.photos.splice(i, 1);
-                        } else {
-                            $scope.photos[i].labels.length = 0;
-                            $scope.photos[i].labels = response.data.labels;
-                        }
+                        $scope.photos[i].labels.length = 0;
+                        $scope.photos[i].labels = response.data.labels;
 
                         break;
                     }
@@ -614,6 +609,51 @@
             });
         }
         /* Stop image zoom dialog code */
+
+        function DeleteController($scope, $mdDialog, image) {
+            $scope.cancel = function() {
+                $mdDialog.cancel();
+            };
+
+            $scope.image = image;
+
+            $scope.delImage = function() {
+                console.log('delete photo: ' + image);
+            };
+        }
+
+        $scope.showDelete = function(ev, image_id) {
+            var confirm = $mdDialog.confirm()
+                .title('Delete Image?')
+                .textContent('Are you sure you want to delete it?')
+                .ariaLabel('Image Deletion')
+                .targetEvent(ev)
+                .ok('Yes')
+                .cancel('No');
+
+            $mdDialog.show(confirm).then(function() {
+                console.log('try deleting: ' + image_id);
+
+                $http({
+                    url: '/api/v1/image/' + image_id,
+                    method: 'DELETE',
+                }).then(function success(response) {
+                    console.log('del image.response: ' + JSON.stringify(response));
+
+                    for (var i = 0; i < $rootScope.photos.length; i++) {
+                        if ($rootScope.photos[i].id == image_id) {
+                            $rootScope.photos.splice(i, 1);
+                            break;
+                        }
+                    }
+                }, function error(data) {
+                    console.log(data);
+                    console.log('error returned!');
+                });
+            }, function() {
+                // ignore close.
+            });
+        }
 
         /* Page Buttons. */
         $scope.prevPage = function() {

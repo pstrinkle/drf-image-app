@@ -160,6 +160,9 @@
                         </md-card-title-media>
                     </md-card-content>
                     <md-card-actions layout="row" layout-align="end">
+                        <md-button ng-click="showDelete($event, card.id)">
+                            DELETE
+                        </md-button>
                         <md-button ng-click="showZoom($event, card.src)">
                             ZOOM
                         </md-button>
