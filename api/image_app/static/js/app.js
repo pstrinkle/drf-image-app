@@ -574,7 +574,7 @@
         $scope.showAdvanced = function(ev) {
             $mdDialog.show({
                 controller: DialogController,
-                templateUrl: 'dialog1.tmpl.html',
+                templateUrl: 'labels.tmpl.html',
                 parent: angular.element(document.body),
                 targetEvent: ev,
                 clickOutsideToClose:true,
