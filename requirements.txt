@@ -1,4 +1,5 @@
 django
+django-filter
 djangorestframework
 drf-nested-routers
 django-rest-knox

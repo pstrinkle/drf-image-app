@@ -1,9 +1,9 @@
+from django.http import HttpResponse
+from rest_framework import viewsets
+
 from image_app.serializers import ImageSerializer
 from image_app.models import Image, Label
 
-from rest_framework import viewsets
-from rest_framework.response import Response
-from django.http import HttpResponse
 
 import os
 import StringIO

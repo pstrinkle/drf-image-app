@@ -2,7 +2,6 @@ from django.contrib.auth import authenticate, login
 from django.http import HttpResponse
 from rest_framework.decorators import detail_route
 from rest_framework import status
-
 from rest_framework import viewsets
 
 from image_app.serializers import ImageUserSerializer

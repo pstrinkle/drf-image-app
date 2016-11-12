@@ -1,13 +1,8 @@
-
-from django.contrib.auth.models import User, Group
-from rest_framework import serializers
-from rest_framework.serializers import PrimaryKeyRelatedField
 from django.apps import apps
+from easy_thumbnails.templatetags.thumbnail import thumbnail_url
+from rest_framework import serializers
 
 from image_app.models import *
-
-from easy_thumbnails.files import get_thumbnailer
-from easy_thumbnails.templatetags.thumbnail import thumbnail_url
 
 
 class ThumbnailSerializer(serializers.ImageField):
@@ -24,7 +19,6 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     RW Image serializer.
     """
 
-    #labels = PrimaryKeyRelatedField(many=True, read_only=True)
     labels = serializers.SerializerMethodField(read_only=True)
 
     def get_labels(self, obj):
@@ -42,15 +36,12 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
         img = Image.objects.create(**validated_data)
 
-        # create a thumbnail from the uploaded image.
-        #img.thumbnail = get_thumbnailer(img.file)
-        #img.save()
-
         return img
 
     class Meta:
         model = apps.get_model('image_app.Image')
-        fields = ('size', 'added', 'file', 'id', 'labels', 'thumbnail')
+        fields = ('size', 'added', 'file', 'id',
+                  'labels', 'thumbnail')
         read_only_fields = ('size', )
 
 
@@ -97,7 +88,10 @@ class ImageUserSerializer(serializers.HyperlinkedModelSerializer):
     # input
     password = serializers.CharField(
         write_only=True,
-        style={'input_type': 'password', 'placeholder': 'Password'}
+        style={
+            'input_type': 'password',
+            'placeholder': 'Password'
+        }
     )
 
     def create(self, validated_data):
@@ -113,7 +107,9 @@ class ImageUserSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = apps.get_model('image_app.ImageUser')
-        fields = ('added', 'email', 'username', 'password', 'first_name', 'last_name', 'id')
+        fields = ('added', 'email', 'username',
+                  'password', 'first_name',
+                  'last_name', 'id')
         write_only_fields = ('password',)
 
 
@@ -124,5 +120,6 @@ class LoginUserSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = apps.get_model('image_app.ImageUser')
-        fields = ('email', 'username', 'first_name', 'last_name', 'id')
+        fields = ('email', 'username', 'first_name',
+                  'last_name', 'id')
 
