@@ -8,3 +8,4 @@ Effectively it's a basic single-page angular front-end that is rendered via djan
 
 If you're new to django-rest-framework you might find this helpful as it utilizes custom pagination, filters, easy_thumbnail, and other facets of the platform.
 
+It uses docker for postgres and django, however, you can run it directly without any issues.
