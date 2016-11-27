@@ -4,6 +4,7 @@
   "authors": [
     "pstrink@1shoe.net"
   ],
+  "directory": "image_app/static/bower_components",
   "description": "single page image organization app",
   "main": "",
   "license": "APACHE 2.0",
@@ -25,7 +26,7 @@
     "angular-animate": "^1.5.8",
     "angular-aria": "^1.5.8",
     "angular-messages": "^1.5.8",
-    "angular-material": "^1.1.1",
+    "angular-material": "^1.1.1"
   },
   "resolutions": {
     "angular": "^1.5.8"
