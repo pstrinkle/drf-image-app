@@ -12,6 +12,6 @@ import os
 from django.core.wsgi import get_wsgi_application
 
 # XXX: make this .prod for using as production
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "image_app.settings.dev")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "image_app.settings.prod")
 
 application = get_wsgi_application()

@@ -20,6 +20,15 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     """
 
     labels = serializers.SerializerMethodField(read_only=True)
+    thumbnail = serializers.SerializerMethodField(read_only=True)
+
+    def get_thumbnail(self, obj):
+        """
+        I wrote this because it (by default) returns the full path, and with nginx serving the media and static, it
+        is unhappy.  Also, this working when running directly via manage.py  So, win-win.
+        """
+
+        return obj.thumbnail.url
 
     def get_labels(self, obj):
         """
@@ -31,7 +40,6 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data):
         validated_data['size'] = validated_data['file'].size
-
         validated_data['thumbnail'] = validated_data['file']
 
         img = Image.objects.create(**validated_data)
