@@ -4,7 +4,6 @@
   "authors": [
     "pstrink@1shoe.net"
   ],
-  "directory": "image_app/static/bower_components",
   "description": "single page image organization app",
   "main": "",
   "license": "APACHE 2.0",
