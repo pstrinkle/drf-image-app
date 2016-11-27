@@ -1,5 +1,5 @@
 # drf-image-app
-Basic drf app for uploading and labeling images
+Basic django-rest-framework app for uploading and labeling images.
 
 I found this useful for sorting and sending out wedding images to people.  It lets you upload images, add labels to them
 which it can then filter on, and uses easy-thumbnail (which is useful).
@@ -17,5 +17,15 @@ I may later decide to write some sample tasks, or something useful to add in rab
 
 The icons are from `material-design-icons`, so if you need more, you can install that bower component: fair warning though, it's huge.
 
+Effectively it's a basic single-page angular front-end that is rendered via django alongside the APIs to support it.
+
+If you're new to django-rest-framework you might find this helpful as it utilizes custom pagination, filters, easy_thumbnail, and other facets of the platform.
+
+It uses docker for postgres and django, however, you can run it directly without any issues.
+
+## Usage
+
 If you want to run it in "production mode" you can run `docker-compose up`
 
+If you want to run it in "development mode" you can run `python manage.py runserver`.  If you want others to be able to
+get to it you need to bind, so, `python manage.py runserver 0.0.0.0:8000`
