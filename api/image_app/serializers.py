@@ -5,13 +5,13 @@ from rest_framework import serializers
 from image_app.models import *
 
 
-class ThumbnailSerializer(serializers.ImageField):
-    """
-    For use in the serializer.
-    """
-
-    def to_representation(self, instance):
-        return thumbnail_url(instance, 'small')
+#class ThumbnailSerializer(serializers.ImageField):
+#    """
+#    For use in the serializer.
+#    """
+#
+#    def to_representation(self, instance):
+#        return thumbnail_url(instance, 'small')
 
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):

@@ -16,7 +16,7 @@ class LabelCreateTests(BasicImageTest):
         """
 
         label = {
-            'value': 'label value!'
+            'value': 'good'
         }
 
         self.login(username='admin')
@@ -25,4 +25,18 @@ class LabelCreateTests(BasicImageTest):
         self.verify_built(label, response.data)
         self.logout()
 
+
+    def test_superuser_cant_create_label(self):
+        """
+        Verify you can list all users.
+        """
+
+        label = {
+            'value': 'not good'
+        }
+
+        self.login(username='admin')
+        response = self.client.post('/api/v1/label', label)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.logout()
 

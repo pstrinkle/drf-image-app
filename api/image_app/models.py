@@ -2,19 +2,18 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MinLengthValidator
 
 from easy_thumbnails.signals import saved_file
 from easy_thumbnails.signal_handlers import generate_aliases_global
 from easy_thumbnails import fields
 
+from sanitizer.models import SanitizedCharField, SanitizedTextField
+
 saved_file.connect(generate_aliases_global)
 
-
 alphanumeric = RegexValidator(r'^[0-9a-zA-Z]*$', 'Only alphanumeric characters are allowed.')
-
-#from easy_thumbnails.templatetags.thumbnail import thumbnail_url
-#thumbnail_url = thumbnail_url(model_with_an_image, 'small')
+minlength = MinLengthValidator(3, message='Field value must be at least 3 characters long')
 
 
 class ImageUser(AbstractUser):
@@ -49,5 +48,5 @@ class Label(models.Model):
     These are how we tag images.
     """
 
-    value = models.CharField(max_length=256, unique=True, validators=[alphanumeric])
+    value = SanitizedCharField(max_length=256, unique=True, validators=[alphanumeric, minlength])
 

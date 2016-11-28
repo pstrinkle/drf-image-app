@@ -10,3 +10,5 @@ from user.list import *
 # /label
 from label.create import *
 from label.list import *
+from label.options import *
+

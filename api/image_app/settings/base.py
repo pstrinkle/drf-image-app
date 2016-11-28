@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'knox',
     'easy_thumbnails',
+    'sanitizer',
     'image_app',
 ]
 
