@@ -1,16 +1,6 @@
 (function () {
     //'use strict';
 
-    var ImgApp = angular.module('image_app', [
-        'ngFileUpload',
-        'ngCookies',
-        'sticky',
-        'ngSanitize',
-        'ngMaterial'
-    ]);
-
-    ImgApp.config(function($locationProvider) {});
-
     function b64EncodeUnicode(str) {
         return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
             return String.fromCharCode('0x' + p1);
@@ -57,113 +47,63 @@
         }
     }
 
-    /* XXX: Define all of the following into resources. */
+    var ImgApp = angular.module('image_app', [
+        'ngFileUpload',
+        'ngCookies',
+        'sticky',
+        'ngSanitize',
+        'ngMaterial',
+        'ngResource',
+    ]);
 
-    /* the following hack is to force sequential adding of labels, followed by updating the whole image.
-     *
-     * really this should use an array at a higher level of scope that has an action detail so that someone
-     * can delete a label from an image while the system is still adding them, and it just keeps processing updates
-     * until they're all done.
-     */
-    var addLabels = function($scope, $http, labels, index, image_id) {
-
-        /* we know addLabels is called with at least one entry in labels, and index starting at 0, so if the
-         * index equals the length we've processed them all.
-         */
-        if (index == labels.length) {
-            $http({
-                url: '/api/v1/image/' + image_id,
-                method: 'GET',
-            }).then(function success(response) {
-                console.log('image+label response: ' + JSON.stringify(response));
-                for (var i = 0; i < $scope.photos.length; i++) {
-                    if ($scope.photos[i].id == image_id) {
-
-                        console.log('found photo pull after adding labels');
-                        console.log('unlabeledSelected: ' + $scope.unlabeledSelected);
-
-                        $scope.photos[i].labels.length = 0;
-                        $scope.photos[i].labels = response.data.labels;
-
-                        break;
-                    }
-                }
-            }, function error(response) {
-                console.log('error on getting the image back');
-            });
-
-            /* don't go below. */
-            return;
-        }
-
-        /* if this label is entirely new, create then attach it, otherwise just attach it. */
-        var ll = labels[index];
-
-        if ($scope.labelLookup[ll] == undefined) {
-            $http({
-                url: 'api/v1/label',
-                method: 'POST',
-                data: {
-                    value: ll
-                }
-            }).then(function success(resp) {
-                console.log('successfully created label: ' + JSON.stringify(resp.data));
-
-                $scope.addLabel(resp.data.value, resp.data.id, resp.data.count);
-               var label_id = resp.data.id;
-
-                $http({
-                    url: '/api/v1/image/' + image_id + '/label/' + label_id,
-                    method: 'PUT',
-                }).then(function success(response) {
-
-                    $scope.labelCnts[ll] += 1;
-
-                    /* we've created the label and now added it to our image; move forward */
-                    addLabels($scope, $http, labels, index + 1, image_id);
-
-                }, function error(resp) {
-                    console.log('failed to add label to image: ' + JSON.stringify(resp.data));
-                });
-            }, function error(resp) {
-                console.log('failed to create label: ' + JSON.stringify(resp.data));
-            });
-        } else {
-            label_id = $scope.labelLookup[ll];
-
-            $http({
-                url: '/api/v1/image/' + image_id + '/label/' + label_id,
+    ImgApp.factory('Images', ['$resource', '$rootScope', function ($resource, $rootScope) {
+        return $resource($rootScope.restUrl + 'image/:imageId', {}, {
+            addLabel: {
                 method: 'PUT',
-            }).then(function success(resp) {
-                /* the label count should go up by 1 */
-                $scope.labelCnts[ll] += 1;
-
-                /* we've added it to our image; move forward */
-                addLabels($scope, $http, labels, index + 1, image_id);
-            });
-        }
-    }
-
-    var listLabels = function($scope, $http) {
-        $http({
-            url: '/api/v1/label',
-            method: 'GET',
-        }).then(function success(response) {
-            console.log('list labels.response: ' + JSON.stringify(response));
-
-            angular.forEach(response.data, function(element, index) {
-                console.log('label: ' + element.value + ' id: ' + element.id);
-
-                $scope.addLabel(element.value, element.id, element.count);
-            });
-
-        }, function error(data) {
-            console.log(data);
-            console.log('error returned!');
+                url: $rootScope.restUrl + 'image/:imageId/label/:labelId',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+            },
+            remLabel: {
+                method: 'DELETE',
+                url: $rootScope.restUrl + 'image/:imageId/label/:labelId',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+            },
+            list: {
+                method: 'GET',
+                params: {format: 'json'},
+                isArray: false,
+            },
+            options: {method: 'OPTIONS', params: {format: 'json'}},
+            update: {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            },
         });
-    }
+    }]).factory('Labels', ['$resource', '$rootScope', function ($resource, $rootScope) {
+        return $resource($rootScope.restUrl + 'label/:labelId', {}, {
+            options: {method: 'OPTIONS', params: {format: 'json'}},
+            update: {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            },
+        });
+    }]).factory('Users', ['$resource', '$rootScope', function ($resource, $rootScope) {
+        return $resource($rootScope.restUrl + 'user/:userId', {}, {
+            options: {method: 'OPTIONS', params: {format: 'json'}},
+            secondary: {
+                method: 'POST',
+                url: $rootScope.restUrl + 'user/:userId/secondarylogin',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            },
+        });
+    }]);
 
+    ImgApp.config(function($locationProvider) {});
+
+    /* XXX: Define all of the following into resources. */
     var handleImages = function($scope, response) {
+
+        console.log('response: ' + JSON.stringify(response));
 
         $scope.photos.length = 0;
         emptyDictionary($scope.downloadSelection);
@@ -171,15 +111,15 @@
 
         jQuery('#listProgress').show();
 
-        console.log('total items: ' + response.data.count);
+        console.log('total items: ' + response.count);
 
         //"next": "http://127.0.0.1:8000/api/v1/image?page=2",
         //"previous": null
 
-        if (response.data.previous == null) {
+        if (response.previous == null) {
             $scope.prevPageNum = 'n/a';
             $scope.currentPage = 1;
-            if (response.data.next) {
+            if (response.next) {
                 $scope.nextPageNum = 2;
             } else {
                 $scope.nextPageNum = 'n/a';
@@ -189,7 +129,7 @@
 
             /* previous page could be the 0th page, and then won't have the page parameter. */
 
-            var prev = response.data.previous;
+            var prev = response.previous;
             var pieces = prev.split('?');
             if (pieces.length > 1) {
                 /* labels and/or page specified */
@@ -205,7 +145,7 @@
 
                 $scope.prevPageNum = page;
                 $scope.currentPage = page + 1;
-                if (response.data.next) {
+                if (response.next) {
                     $scope.nextPageNum = page + 2;
                 } else {
                     $scope.nextPageNum = 'n/a';
@@ -215,7 +155,7 @@
                 $scope.prevPageNum = 1;
                 $scope.currentPage = 2;
 
-                if (response.data.next) {
+                if (response.next) {
                     $scope.nextPageNum = 3;
                 } else {
                     $scope.nextPageNum = 'n/a';
@@ -223,76 +163,23 @@
             }
         }
 
-        $scope.prevLink = response.data.previous;
-        $scope.nextLink = response.data.next;
+        $scope.prevLink = response.previous;
+        $scope.nextLink = response.next;
 
         // temp code.
-        angular.forEach(response.data.results, function(element, index) {
+        angular.forEach(response.results, function(element, index) {
             $scope.addImage(element.id, element.thumbnail, element.labels);
         });
 
-        delete response.data.results;
-        console.log('response elements: ' + JSON.stringify(response.data, null, 2));
+        delete response.results;
+        console.log('response elements: ' + JSON.stringify(response, null, 2));
 
         jQuery('#listProgress').hide();
     }
 
-    var listUnlabeled = function($scope, $http) {
-        $http({
-            url: '/api/v1/image',
-            method: 'GET',
-            params: {unlabeled: true},
-        }).then(function success(response) {
-            console.log('list images.response: ' + JSON.stringify(response));
-
-            handleImages($scope, response);
-
-        }, function error(data) {
-            console.log(data);
-            console.log('error returned!');
-        });
-    }
-
-    var listImages = function($scope, $http) {
-        $http({
-            url: '/api/v1/image',
-            method: 'GET',
-        }).then(function success(response) {
-            //console.log('list images.response: ' + JSON.stringify(response));
-
-            handleImages($scope, response);
-
-        }, function error(data) {
-            console.log(data);
-            console.log('error returned!');
-        });
-    }
-
-    var filterImages = function($scope, $http) {
-        $http({
-            url: '/api/v1/image',
-            method: 'GET',
-            params: {labels: $scope.selected},
-        }).then(function success(response) {
-            //console.log('list images.response: ' + JSON.stringify(response));
-
-            handleImages($scope, response);
-
-        }, function error(data) {
-            console.log(data);
-            console.log('error returned!');
-        });
-    }
-
-    var loggedinInit = function($scope, $http) {
-        jQuery('#loginformarea').hide();
-
-        // they loaded logged in, so let's load everything to start with.
-        listLabels($scope, $http);
-        listImages($scope, $http);
-    }
-
     ImgApp.run(function($rootScope, $http) {
+
+        $rootScope.restUrl = '/api/v1/';
 
         $rootScope.loggedin = false;
 
@@ -329,56 +216,6 @@
                                     'labels': labels})
         }
 
-        $rootScope.unlabeledFilter = function() {
-            /* de-select all filters. */
-            for (var i = 0; i < $rootScope.selected.length; i++) {
-                $rootScope.labels.push($rootScope.selected[i]);
-            }
-            $rootScope.selected.length = 0;
-
-            $rootScope.photos.length = 0;
-            emptyDictionary($rootScope.downloadSelection);
-            $rootScope.downloadCount = 0;
-
-            listUnlabeled($rootScope, $http);
-        }
-
-        $rootScope.allImagesFilter = function() {
-            for (var i = 0; i < $rootScope.selected.length; i++) {
-                $rootScope.labels.push($rootScope.selected[i]);
-            }
-
-            $rootScope.selected.length = 0;
-            listImages($rootScope, $http);
-        }
-
-        $rootScope.addFilter = function(filter) {
-            console.log('addFilter: ' + filter);
-            $rootScope.selected.push(filter); // add to selection.
-            for (var i = 0; i < $rootScope.labels.length; i++) {
-                if ($rootScope.labels[i] === filter) {
-                    $rootScope.labels.splice(i, 1);
-                    break;
-                }
-            }
-
-            /* this isn't the most efficient. */
-            filterImages($rootScope, $http);
-        }
-
-        $rootScope.delFilter = function(filter) {
-            console.log('delFilter: ' + filter);
-            $rootScope.labels.push(filter); // add to selection.
-            for (var i = 0; i < $rootScope.selected.length; i++) {
-                if ($rootScope.selected[i] === filter) {
-                    $rootScope.selected.splice(i, 1);
-                    break;
-                }
-            }
-
-            filterImages($rootScope, $http);
-        }
-
         $rootScope.setToken = function(token) {
             if (token) {
                 $rootScope.token = token;
@@ -407,32 +244,184 @@
         $rootScope.setToken(localStorage.getItem('token'));
         $rootScope.setUser(JSON.parse(localStorage.getItem('user')));
 
+        jQuery('#uploadtrackingContainer').hide();
+    });
+
+    ImgApp.controller('photoCtrl',
+                      ['$rootScope', '$scope', '$mdDialog', '$http',
+                       '$location', '$cookies', '$window', '$q', 'Upload',
+                       'Images', 'Labels', 'Users',
+                       function($rootScope, $scope, $mdDialog, $http,
+                                $location, $cookies, $window, $q, Upload,
+                                Images, Labels, Users) {
+
+        /* the following hack is to force sequential adding of labels, followed by updating the whole image.
+         *
+         * really this should use an array at a higher level of scope that has an action detail so that someone
+         * can delete a label from an image while the system is still adding them, and it just keeps processing updates
+         * until they're all done.
+         */
+        var addLabels = function($scope, labels, index, image_id) {
+
+            /* we know addLabels is called with at least one entry in labels, and index starting at 0, so if the
+             * index equals the length we've processed them all.
+             */
+            if (index == labels.length) {
+
+                Images.get({imageId: image_id}).$promise
+                    .then(function success(response) {
+                        console.log('image+label response: ' + JSON.stringify(response));
+
+                        for (var i = 0; i < $scope.photos.length; i++) {
+                            if ($scope.photos[i].id == image_id) {
+
+                                console.log('found photo pull after adding labels');
+                                console.log('unlabeledSelected: ' + $scope.unlabeledSelected);
+
+                                $scope.photos[i].labels.length = 0;
+                                $scope.photos[i].labels = response.labels;
+
+                                break;
+                            }
+                        }
+                    });
+
+                /* don't go below. */
+                return;
+            }
+
+            /* if this label is entirely new, create then attach it, otherwise just attach it. */
+            var ll = labels[index];
+
+            if ($scope.labelLookup[ll] == undefined) {
+
+                Labels.save({value: ll}).$promise
+                    .then(function success(resp) {
+                        console.log('successfully created label: ' + JSON.stringify(resp));
+
+                        $scope.addLabel(resp.value, resp.id, resp.count);
+                        var label_id = resp.id;
+
+                        Images.addLabel({imageId: image_id, labelId: label_id}, {}).$promise
+                            .then(function success(response) {
+
+                                $scope.labelCnts[ll] += 1;
+
+                                /* we've created the label and now added it to our image; move forward */
+                                addLabels($scope, labels, index + 1, image_id);
+                            });
+                    });
+            } else {
+                label_id = $scope.labelLookup[ll];
+
+                Images.addLabel({imageId: image_id, labelId: label_id}, {}).$promise
+                    .then(function success(resp) {
+                        /* the label count should go up by 1 */
+                        $scope.labelCnts[ll] += 1;
+
+                        /* we've added it to our image; move forward */
+                        addLabels($scope, labels, index + 1, image_id);
+                    });
+            }
+        }
+
+        $scope.allImagesFilter = function() {
+            for (var i = 0; i < $rootScope.selected.length; i++) {
+                $rootScope.labels.push($rootScope.selected[i]);
+            }
+
+            $rootScope.selected.length = 0;
+
+            Images.list().$promise
+                .then(function(response) {
+                    handleImages($rootScope, response);
+                });
+        }
+
+        var loggedinInit = function($scope) {
+            jQuery('#loginformarea').hide();
+
+            // they loaded logged in, so let's load everything to start with.
+            Labels.query().$promise
+                .then(function(response) {
+                    angular.forEach(response, function(element, index) {
+                        console.log('label: ' + element.value + ' id: ' + element.id);
+
+                        $rootScope.addLabel(element.value, element.id, element.count);
+                    });
+                });
+
+            Images.list().$promise
+                .then(function(response) {
+                    handleImages($scope, response);
+                });
+        }
+
         /* Test the user's credentials and initialize the lists. */
         if ($rootScope.token && $rootScope.user) {
             var id = $rootScope.user.id;
 
-            $http({
-                url: '/api/v1/user/' + id,
-                method: 'GET',
-            }).then(function success(response) {
-                console.log('response: ' + JSON.stringify(response));
+            Users.get({userId: id}).$promise
+                .then(function success(response) {
+                    console.log('response: ' + JSON.stringify(response));
 
-                $rootScope.loggedin = true;
+                    $rootScope.loggedin = true;
 
-                loggedinInit($rootScope, $http);
-            }, function error(data) {
-                console.log(data);
-                console.log('error returned!');
-            });
+                    loggedinInit($rootScope);
+                });
         }
 
-        jQuery('#uploadtrackingContainer').hide();
-    });
+        $scope.addFilter = function(filter) {
+            console.log('addFilter: ' + filter);
+            $rootScope.selected.push(filter); // add to selection.
+            for (var i = 0; i < $rootScope.labels.length; i++) {
+                if ($rootScope.labels[i] === filter) {
+                    $rootScope.labels.splice(i, 1);
+                    break;
+                }
+            }
 
-    ImgApp.controller('photoCtrl', ['$rootScope', '$scope', '$mdDialog', '$http',
-                                    '$location', '$cookies', '$window', '$q', 'Upload',
-                                    function($rootScope, $scope, $mdDialog, $http,
-                                             $location, $cookies, $window, $q, Upload) {
+            /* this isn't the most efficient. */
+            Images.list({labels: $scope.selected}).$promise
+                .then(function(response) {
+                    handleImages($rootScope, response);
+                });
+        }
+
+        $scope.delFilter = function(filter) {
+            console.log('delFilter: ' + filter);
+            $rootScope.labels.push(filter); // add to selection.
+            for (var i = 0; i < $rootScope.selected.length; i++) {
+                if ($rootScope.selected[i] === filter) {
+                    $rootScope.selected.splice(i, 1);
+                    break;
+                }
+            }
+
+            Images.list({labels: $scope.selected}).$promise
+                .then(function(response) {
+                    handleImages($rootScope, response);
+                });
+        }
+
+        $scope.unlabeledFilter = function() {
+            /* de-select all filters. */
+            for (var i = 0; i < $rootScope.selected.length; i++) {
+                $rootScope.labels.push($rootScope.selected[i]);
+            }
+            $rootScope.selected.length = 0;
+
+            $rootScope.photos.length = 0;
+            emptyDictionary($rootScope.downloadSelection);
+            $rootScope.downloadCount = 0;
+
+            Images.list({unlabeled: true}).$promise
+                .then(function(response) {
+                    console.log('list images.response: ' + JSON.stringify(response));
+
+                    handleImages($rootScope, response);
+                });
+        }
 
         /* Start edit labels dialog code */
         function DialogController($scope, $mdDialog) {
@@ -467,38 +456,30 @@
                                 var lid = $scope.labelLookup[label];
 
                                 var updateLabel = function() {
-                                    $http({
-                                        url: '/api/v1/label/' + lid,
-                                        method: 'PUT',
-                                        data: {
-                                            value: v,
-                                        },
-                                    }).then(function success(response) {
+                                    Labels.update({labelId: lid}, {value: v}).$promise
+                                        .then(function success(response) {
 
-                                        $rootScope.labelLookup[v] = $rootScope.labelLookup[l];
-                                        $rootScope.labelCnts[v] = $rootScope.labelCnts[l];
+                                            $rootScope.labelLookup[v] = $rootScope.labelLookup[l];
+                                            $rootScope.labelCnts[v] = $rootScope.labelCnts[l];
 
-                                        delete $rootScope.labelLookup[l];
-                                        delete $rootScope.labelCnts[l];
+                                            delete $rootScope.labelLookup[l];
+                                            delete $rootScope.labelCnts[l];
 
-                                        for (var k = 0; k < $rootScope.labels.length; k++) {
-                                            if ($rootScope.labels[k] === l) {
-                                                $rootScope.labels[k] = v;
-                                                break;
+                                            for (var k = 0; k < $rootScope.labels.length; k++) {
+                                                if ($rootScope.labels[k] === l) {
+                                                    $rootScope.labels[k] = v;
+                                                    break;
+                                                }
                                             }
-                                        }
-                                        for (var j = 0; j < $rootScope.selected.length; j++) {
-                                            if ($rootScope.selected[j] === l) {
-                                                $rootScope.selected[j] = v;
-                                                break;
+                                            for (var j = 0; j < $rootScope.selected.length; j++) {
+                                                if ($rootScope.selected[j] === l) {
+                                                    $rootScope.selected[j] = v;
+                                                    break;
+                                                }
                                             }
-                                        }
 
-                                        console.log('successfully renamed it');
-                                    }, function error(data) {
-                                        console.log(data);
-                                        console.log('error returned!');
-                                    });
+                                            console.log('successfully renamed it');
+                                        });
                                 }
 
                                 tasks.push(updateLabel);
@@ -521,30 +502,26 @@
                         var deleteLabel = function() {
                             console.log('deleting: ' + l);
 
-                            $http({
-                                url: '/api/v1/label/' + lid,
-                                method: 'DELETE',
-                            }).then(function success(response) {
-                                console.log('del label.response: ' + JSON.stringify(response));
-                                delete $rootScope.labelLookup[l];
-                                delete $rootScope.labelCnts[l];
+                            Labels.delete({labelId: lid}).$promise
+                                .then(function success(response) {
+                                    console.log('del label.response: ' + JSON.stringify(response));
+                                    delete $rootScope.labelLookup[l];
+                                    delete $rootScope.labelCnts[l];
 
-                                for (var k = 0; k < $rootScope.labels.length; k++) {
-                                    if ($rootScope.labels[k] === l) {
-                                        $rootScope.labels.splice(k, 1);
-                                        break;
+                                    for (var k = 0; k < $rootScope.labels.length; k++) {
+                                        if ($rootScope.labels[k] === l) {
+                                            $rootScope.labels.splice(k, 1);
+                                            break;
+                                        }
                                     }
-                                }
-                                for (var j = 0; j < $rootScope.selected.length; j++) {
-                                    if ($rootScope.selected[j] === l) {
-                                        $rootScope.selected.splice(j, 1);
-                                        break;
+                                    for (var j = 0; j < $rootScope.selected.length; j++) {
+                                        if ($rootScope.selected[j] === l) {
+                                            $rootScope.selected.splice(j, 1);
+                                            break;
+                                        }
                                     }
-                                }
-                            }, function error(data) {
-                                console.log(data);
-                                console.log('error returned!');
-                            });
+                                });
+
                         }
 
                         tasks.push(deleteLabel);
@@ -634,22 +611,17 @@
             $mdDialog.show(confirm).then(function() {
                 console.log('try deleting: ' + image_id);
 
-                $http({
-                    url: '/api/v1/image/' + image_id,
-                    method: 'DELETE',
-                }).then(function success(response) {
-                    console.log('del image.response: ' + JSON.stringify(response));
+                Images.delete({imageId: image_id}).$promise
+                    .then(function success(response) {
+                        console.log('del image.response: ' + JSON.stringify(response));
 
-                    for (var i = 0; i < $rootScope.photos.length; i++) {
-                        if ($rootScope.photos[i].id == image_id) {
-                            $rootScope.photos.splice(i, 1);
-                            break;
+                        for (var i = 0; i < $rootScope.photos.length; i++) {
+                            if ($rootScope.photos[i].id == image_id) {
+                                $rootScope.photos.splice(i, 1);
+                                break;
+                            }
                         }
-                    }
-                }, function error(data) {
-                    console.log(data);
-                    console.log('error returned!');
-                });
+                    });
             }, function() {
                 // ignore close.
             });
@@ -660,7 +632,7 @@
             $http({
                 url: $scope.prevLink,
             }).then(function success(response) {
-                handleImages($rootScope, response);
+                handleImages($rootScope, response.data);
             });
         }
 
@@ -668,26 +640,17 @@
             $http({
                 url: $scope.nextLink,
             }).then(function success(response) {
-                handleImages($rootScope, response);
+                handleImages($rootScope, response.data);
             });
         }
 
         /* Create Label */
         $scope.createLabel = function() {
-            $http({
-                url: 'api/v1/label',
-                method: 'POST',
-                data: {
-                    value: $scope.newLabel
-                }
-            }).then(function success(resp) {
-                console.log('successfully created label: ' + JSON.stringify(resp.data));
-
-                $scope.addLabel(resp.data.value, resp.data.id, resp.data.count);
-
-            }, function error(resp) {
-                console.log('failed to create label: ' + JSON.stringify(resp.data));
-            });
+            Labels.save({value: $scope.newLabel}).$promise
+                .then(function success(resp) {
+                    console.log('successfully created label: ' + JSON.stringify(resp));
+                    $scope.addLabel(resp.value, resp.id, resp.count);
+                });
         }
 
         /* Toolbar controls. */
@@ -808,40 +771,35 @@
             if (label && label.length > 0) {
                 label_id = $scope.labelLookup[label];
 
-                $http({
-                    url: '/api/v1/image/' + image_id + '/label/' + label_id,
-                    method: 'DELETE',
-                }).then(function success(resp) {
-                    /* the label count should go up by 1 */
-                    $scope.labelCnts[label] -= 1;
+                Images.remLabel({imageId: image_id, labelId: label_id}).$promise
+                    .then(function success(resp) {
+                        /* the label count should go up by 1 */
+                        $scope.labelCnts[label] -= 1;
 
-                    /* we've added it to our image; move forward */
-                    $http({
-                        url: '/api/v1/image/' + image_id,
-                        method: 'GET',
-                    }).then(function success(response) {
-                        console.log('image+label response: ' + JSON.stringify(response));
-                        for (var i = 0; i < $scope.photos.length; i++) {
-                            if ($scope.photos[i].id == image_id) {
+                        /* we've added it to our image; move forward */
+                        Images.get({imageId: image_id}).$promise
+                            .then(function success(response) {
+                                console.log('image+label response: ' + JSON.stringify(response));
 
-                                console.log('found photo pull after adding labels');
-                                console.log('unlabeledSelected: ' + $scope.unlabeledSelected);
+                                for (var i = 0; i < $scope.photos.length; i++) {
+                                    if ($scope.photos[i].id == image_id) {
 
-                                // if they're unlabeled filtering, hide this image now.
-                                if ($scope.unlabeledSelected) {
-                                    $scope.photos.splice(i, 1);
-                                } else {
-                                    $scope.photos[i].labels.length = 0;
-                                    $scope.photos[i].labels = response.data.labels;
+                                        console.log('found photo pull after adding labels');
+                                        console.log('unlabeledSelected: ' + $scope.unlabeledSelected);
+
+                                        // if they're unlabeled filtering, hide this image now.
+                                        if ($scope.unlabeledSelected) {
+                                            $scope.photos.splice(i, 1);
+                                        } else {
+                                            $scope.photos[i].labels.length = 0;
+                                            $scope.photos[i].labels = response.labels;
+                                        }
+
+                                        break;
+                                    }
                                 }
-
-                                break;
-                            }
-                        }
-                    }, function error(response) {
-                        console.log('error on getting the image back');
+                            });
                     });
-                });
             }
         }
 
@@ -857,7 +815,7 @@
                 var labelsToAdd = [];
                 labelsToAdd.push(label);
 
-                addLabels($rootScope, $http, labelsToAdd, 0, image_id);
+                addLabels($rootScope, labelsToAdd, 0, image_id);
             }
         }
 
@@ -937,22 +895,14 @@
                     $rootScope.setUser(response.data.user);
                     $rootScope.setToken(response.data.token);
 
-                    $http({
-                        url: '/api/v1/user/1/secondarylogin',
-                        method: 'POST',
-                        data: {
-                            username: u,
-                            password: p
-                        },
-                    }).then(function success(response) {
-                        console.log('logged in successfully!');
+                    Users.secondary({userId: response.data.user.id}, {username: u, password: p}).$promise
+                        .then(function success(response) {
+                            console.log('logged in successfully!');
 
-                        $mdDialog.cancel();
+                            $mdDialog.cancel();
 
-                        loggedinInit($rootScope, $http);
-                    }, function error(data) {
-                        console.log('failed to login');
-                    });
+                            loggedinInit($rootScope);
+                        });
                 }, function error(data) {
                     console.log(data);
                     console.log('error returned!');

@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 
 from image_app.models import Image
 from image_app.serializers import LoginUserSerializer
+import sys
 import os
 
 
@@ -41,8 +42,7 @@ class ImageView(View):
 
     def get(self, request, *args, **kwargs):
         request_path = request.path.replace(settings.MEDIA_URL, '')
-        file_type = request_path.split('.')[-1]
-
+        file_type = request_path.split('.')[-1].lower()
         file_path = os.path.join(settings.MEDIA_ROOT, request_path)
 
         if file_type not in ('png', 'jpg', 'jpeg', 'gif', 'bmp'):
