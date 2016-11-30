@@ -27,6 +27,11 @@
         width: 600px;
     }
 
+    .active {
+        background: rgb(63,81,181);
+        color: white;
+    }
+
     .container img {
         max-height: 100%;
         max-width: 100%;
@@ -70,13 +75,11 @@
             <!-- list of all labels in the system -->
             <div>
                 <h3>Available Labels {{labels.length}}</h3>
-                <ul class="nav nav-pills">
-                    <li ng-click="selectUnlabeled($event)" id="unlabeledLi">
-                        <a href="#" onclick="return false;">unlabeled</a>
-                    </li>
-                </ul>
                 <md-chips ng-model="labels"
                           readonly="true">
+                    <md-chip ng-click="selectUnlabeled($event)" id="unlabeledChip">
+                        <span><em>unlabeled</em></span>
+                    </md-chip>
                     <md-chip-template ng-click="selectLabel($chip)">
                         <span>{{$chip}}</span>
                         <em>({{labelCnts[$chip]}})</em>

@@ -658,23 +658,25 @@
         $scope.selectUnlabeled = function(e) {
             console.log('clicked unlabeled');
 
-            var $p = $(e.target).parent();
+            var $t = jQuery('#unlabeledChip');
 
             /* are they selecting or de-selecting? */
-            if ($p.hasClass('active')) {
-                $p.removeClass('active');
-                $(e.target).blur();
+            if ($t.hasClass('active')) {
+                $t.removeClass('active');
 
                 $scope.unlabeledSelected = false;
                 $scope.allImagesFilter();
             } else {
-                $p.addClass('active');
+                $t.addClass('active');
 
                 $scope.unlabeledSelected = true;
                 $scope.unlabeledFilter();
             }
 
+            $(e.target).blur();
+            $t.blur();
             e.preventDefault();
+
             return false;
         }
 
@@ -682,7 +684,7 @@
         $scope.selectLabel = function(chip) {
             if ($scope.unlabeledSelected) {
                 $scope.unlabeledSelected = false;
-                jQuery('#unlabeledLi').removeClass('active');
+                jQuery('#unlabeledChip').removeClass('active');
             }
 
             var filter = chip.trim();
