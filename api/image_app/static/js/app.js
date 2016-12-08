@@ -56,6 +56,19 @@
         'ngResource',
     ]);
 
+    ImgApp.directive('autolowercase', function() {
+        return {
+            require: 'ngModel',
+            link: function(scope, element, attrs, modelCtrl) {
+                modelCtrl.$parsers.push(function(input) {
+                    return input ? input.toLowerCase() : "";
+                });
+
+                element.css("text-transform", "lowercase");
+            }
+        };
+    });
+
     ImgApp.factory('Images', ['$resource', '$rootScope', function ($resource, $rootScope) {
         return $resource($rootScope.restUrl + 'image/:imageId', {}, {
             addLabel: {
@@ -183,39 +196,6 @@
 
         $rootScope.loggedin = false;
 
-        $rootScope.photos = [];
-        $rootScope.prevPageNum = -1;
-        $rootScope.currentPage = 0;
-        $rootScope.nextPageNum = 1;
-        $rootScope.prevLink = null;
-        $rootScope.nextLink = null;
-
-        $rootScope.unlabeledSelected = false;
-        $rootScope.selected = []; // used for filtering the images.
-
-        $rootScope.downloadSelection = {};
-        $rootScope.downloadCount = 0;
-
-        $rootScope.labelCnts = {};
-        $rootScope.labelLookup = {};
-        $rootScope.labels = [];
-        $rootScope.multiLabel = "";
-
-        $rootScope.uploadQueue = [];
-        $rootScope.progressBar = 0;
-
-        $rootScope.addLabel = function(label, id, cnt) {
-            $rootScope.labels.push(label);
-            $rootScope.labelLookup[label] = id;
-            $rootScope.labelCnts[label] = cnt;
-        }
-
-        $rootScope.addImage = function(id, src, labels) {
-            $rootScope.photos.push({'id': id,
-                                    'src': src,
-                                    'labels': labels})
-        }
-
         $rootScope.setToken = function(token) {
             if (token) {
                 $rootScope.token = token;
@@ -254,6 +234,40 @@
                        function($rootScope, $scope, $mdDialog, $http,
                                 $location, $cookies, $window, $q, Upload,
                                 Images, Labels, Users) {
+
+        $scope.config = {};
+        $scope.photos = [];
+        $scope.prevPageNum = -1;
+        $scope.currentPage = 0;
+        $scope.nextPageNum = 1;
+        $scope.prevLink = null;
+        $scope.nextLink = null;
+
+        $scope.unlabeledSelected = false;
+        $scope.selected = []; // used for filtering the images.
+
+        $scope.downloadSelection = {};
+        $scope.downloadCount = 0;
+
+        $scope.labelCnts = {};
+        $scope.labelLookup = {};
+        $scope.labels = [];
+        $scope.multiLabel = "";
+
+        $scope.uploadQueue = [];
+        $scope.progressBar = 0;
+
+        $scope.addLabel = function(label, id, cnt) {
+            $scope.labels.push(label);
+            $scope.labelLookup[label] = id;
+            $scope.labelCnts[label] = cnt;
+        }
+
+        $scope.addImage = function(id, src, labels) {
+            $scope.photos.push({'id': id,
+                                'src': src,
+                                'labels': labels})
+        }
 
         /* the following hack is to force sequential adding of labels, followed by updating the whole image.
          *
@@ -326,20 +340,27 @@
         }
 
         $scope.allImagesFilter = function() {
-            for (var i = 0; i < $rootScope.selected.length; i++) {
-                $rootScope.labels.push($rootScope.selected[i]);
+            for (var i = 0; i < $scope.selected.length; i++) {
+                $scope.labels.push($scope.selected[i]);
             }
 
-            $rootScope.selected.length = 0;
+            $scope.selected.length = 0;
 
             Images.list().$promise
                 .then(function(response) {
-                    handleImages($rootScope, response);
+                    handleImages($scope, response);
                 });
         }
 
-        var loggedinInit = function($scope) {
+        var loggedinInit = function() {
             jQuery('#loginformarea').hide();
+
+            Labels.options().$promise
+                .then(function(result) {
+                    console.log('result: ' + JSON.stringify(result, null, 2));
+                    $scope.config = result.actions.POST;
+                    $scope.config.value.pattern = new RegExp($scope.config.value.pattern);
+                });
 
             // they loaded logged in, so let's load everything to start with.
             Labels.query().$promise
@@ -347,7 +368,7 @@
                     angular.forEach(response, function(element, index) {
                         console.log('label: ' + element.value + ' id: ' + element.id);
 
-                        $rootScope.addLabel(element.value, element.id, element.count);
+                        $scope.addLabel(element.value, element.id, element.count);
                     });
                 });
 
@@ -367,16 +388,16 @@
 
                     $rootScope.loggedin = true;
 
-                    loggedinInit($rootScope);
+                    loggedinInit();
                 });
         }
 
         $scope.addFilter = function(filter) {
             console.log('addFilter: ' + filter);
-            $rootScope.selected.push(filter); // add to selection.
-            for (var i = 0; i < $rootScope.labels.length; i++) {
-                if ($rootScope.labels[i] === filter) {
-                    $rootScope.labels.splice(i, 1);
+            $scope.selected.push(filter); // add to selection.
+            for (var i = 0; i < $scope.labels.length; i++) {
+                if ($scope.labels[i] === filter) {
+                    $scope.labels.splice(i, 1);
                     break;
                 }
             }
@@ -384,42 +405,42 @@
             /* this isn't the most efficient. */
             Images.list({labels: $scope.selected}).$promise
                 .then(function(response) {
-                    handleImages($rootScope, response);
+                    handleImages($scope, response);
                 });
         }
 
         $scope.delFilter = function(filter) {
             console.log('delFilter: ' + filter);
-            $rootScope.labels.push(filter); // add to selection.
-            for (var i = 0; i < $rootScope.selected.length; i++) {
-                if ($rootScope.selected[i] === filter) {
-                    $rootScope.selected.splice(i, 1);
+            $scope.labels.push(filter); // add to selection.
+            for (var i = 0; i < $scope.selected.length; i++) {
+                if ($scope.selected[i] === filter) {
+                    $scope.selected.splice(i, 1);
                     break;
                 }
             }
 
             Images.list({labels: $scope.selected}).$promise
                 .then(function(response) {
-                    handleImages($rootScope, response);
+                    handleImages($scope, response);
                 });
         }
 
         $scope.unlabeledFilter = function() {
             /* de-select all filters. */
-            for (var i = 0; i < $rootScope.selected.length; i++) {
-                $rootScope.labels.push($rootScope.selected[i]);
+            for (var i = 0; i < $scope.selected.length; i++) {
+                $scope.labels.push($scope.selected[i]);
             }
-            $rootScope.selected.length = 0;
 
-            $rootScope.photos.length = 0;
-            emptyDictionary($rootScope.downloadSelection);
-            $rootScope.downloadCount = 0;
+            $scope.selected.length = 0;
+            $scope.photos.length = 0;
+            emptyDictionary($scope.downloadSelection);
+            $scope.downloadCount = 0;
 
             Images.list({unlabeled: true}).$promise
                 .then(function(response) {
                     console.log('list images.response: ' + JSON.stringify(response));
 
-                    handleImages($rootScope, response);
+                    handleImages($scope, response);
                 });
         }
 
@@ -436,11 +457,13 @@
             $scope.save = function() {
                 var tasks = [];
 
+                console.log('$scope.labels: ' + JSON.stringify($scope.labels, null, 2));
+
                 /* Walk through the list of items (not being deleted) and see if they've changed */
                 for (var i = 0; i < $scope.labels.length; i++) {
                     var label = $scope.labels[i];
 
-                    var $inputField = jQuery('#edit_label_' + label);
+                    var $inputField = jQuery('#edit_label_' + $scope.labelLookup[label]);
                     var value = $inputField.val().trim();
 
                     if (label != value) {
@@ -459,21 +482,21 @@
                                     Labels.update({labelId: lid}, {value: v}).$promise
                                         .then(function success(response) {
 
-                                            $rootScope.labelLookup[v] = $rootScope.labelLookup[l];
-                                            $rootScope.labelCnts[v] = $rootScope.labelCnts[l];
+                                            $scope.labelLookup[v] = $scope.labelLookup[l];
+                                            $scope.labelCnts[v] = $scope.labelCnts[l];
 
-                                            delete $rootScope.labelLookup[l];
-                                            delete $rootScope.labelCnts[l];
+                                            delete $scope.labelLookup[l];
+                                            delete $scope.labelCnts[l];
 
-                                            for (var k = 0; k < $rootScope.labels.length; k++) {
-                                                if ($rootScope.labels[k] === l) {
-                                                    $rootScope.labels[k] = v;
+                                            for (var k = 0; k < $scope.labels.length; k++) {
+                                                if ($scope.labels[k] === l) {
+                                                    $scope.labels[k] = v;
                                                     break;
                                                 }
                                             }
-                                            for (var j = 0; j < $rootScope.selected.length; j++) {
-                                                if ($rootScope.selected[j] === l) {
-                                                    $rootScope.selected[j] = v;
+                                            for (var j = 0; j < $scope.selected.length; j++) {
+                                                if ($scope.selected[j] === l) {
+                                                    $scope.selected[j] = v;
                                                     break;
                                                 }
                                             }
@@ -490,14 +513,11 @@
 
                 /* Walk through the list of items to delete, and delete them. */
                 for (var i = 0; i < $scope.toDelete.length; i++) {
-                    var label = $scope.toDelete[i];
-                    var label_id = $scope.labelLookup[label];
-
-                    console.log('deleting label: ' + label + ' id: ' + label_id);
+                    var label_id = $scope.toDelete[i];
 
                     (function () {
-                        var l = label;
-                        var lid = $scope.labelLookup[label];
+                        var l = $scope.reverseLookup[label_id];
+                        var lid = label_id;
 
                         var deleteLabel = function() {
                             console.log('deleting: ' + l);
@@ -505,18 +525,19 @@
                             Labels.delete({labelId: lid}).$promise
                                 .then(function success(response) {
                                     console.log('del label.response: ' + JSON.stringify(response));
-                                    delete $rootScope.labelLookup[l];
-                                    delete $rootScope.labelCnts[l];
+                                    delete $scope.labelLookup[l];
+                                    delete $scope.labelCnts[l];
 
-                                    for (var k = 0; k < $rootScope.labels.length; k++) {
-                                        if ($rootScope.labels[k] === l) {
-                                            $rootScope.labels.splice(k, 1);
+                                    for (var k = 0; k < $scope.labels.length; k++) {
+                                        if ($scope.labels[k] === l) {
+                                            $scope.labels.splice(k, 1);
                                             break;
                                         }
                                     }
-                                    for (var j = 0; j < $rootScope.selected.length; j++) {
-                                        if ($rootScope.selected[j] === l) {
-                                            $rootScope.selected.splice(j, 1);
+
+                                    for (var j = 0; j < $scope.selected.length; j++) {
+                                        if ($scope.selected[j] === l) {
+                                            $scope.selected.splice(j, 1);
                                             break;
                                         }
                                     }
@@ -540,15 +561,27 @@
 
             $scope.toDelete = [];
 
-            $scope.del = function(label) {
-                console.log('try deleting label: ' + label);
-                $scope.toDelete.push(label);
+            $scope.del = function(lid) {
+                console.log('try deleting label: ' + lid);
+                $scope.toDelete.push(lid);
 
-                jQuery('#edit_label_' + label).css('text-decoration', 'line-through');
+                jQuery('#edit_label_' + lid).css('text-decoration', 'line-through');
             }
         }
 
-        $scope.showAdvanced = function(ev) {
+        $scope.launchEditLabels = function(ev) {
+
+            /* these only matter during an edit session. */
+            $scope.editLabels = [];
+            $scope.reverseLookup = {};
+
+            for (var i = 0; i < $scope.labels.length; i++) {
+                var l = $scope.labels[i];
+                var d = $scope.labelLookup[l];
+                $scope.editLabels.push({value: l, id: d});
+                $scope.reverseLookup[d] = l;
+            }
+
             $mdDialog.show({
                 controller: DialogController,
                 templateUrl: 'labels.tmpl.html',
@@ -615,9 +648,9 @@
                     .then(function success(response) {
                         console.log('del image.response: ' + JSON.stringify(response));
 
-                        for (var i = 0; i < $rootScope.photos.length; i++) {
-                            if ($rootScope.photos[i].id == image_id) {
-                                $rootScope.photos.splice(i, 1);
+                        for (var i = 0; i < $scope.photos.length; i++) {
+                            if ($scope.photos[i].id == image_id) {
+                                $scope.photos.splice(i, 1);
                                 break;
                             }
                         }
@@ -632,7 +665,7 @@
             $http({
                 url: $scope.prevLink,
             }).then(function success(response) {
-                handleImages($rootScope, response.data);
+                handleImages($scope, response.data);
             });
         }
 
@@ -640,7 +673,7 @@
             $http({
                 url: $scope.nextLink,
             }).then(function success(response) {
-                handleImages($rootScope, response.data);
+                handleImages($scope, response.data);
             });
         }
 
@@ -817,17 +850,17 @@
                 var labelsToAdd = [];
                 labelsToAdd.push(label);
 
-                addLabels($rootScope, labelsToAdd, 0, image_id);
+                addLabels($scope, labelsToAdd, 0, image_id);
             }
         }
 
         /* autocomplete for adding labels. */
-        $rootScope.selectedItem = null;
-        $rootScope.searchText = null;
-        $rootScope.querySearch = querySearch;
+        $scope.selectedItem = null;
+        $scope.searchText = null;
+        $scope.querySearch = querySearch;
 
         function querySearch (query) {
-            var results = query ? $rootScope.labels.filter(createFilterFor(query)) : [];
+            var results = query ? $scope.labels.filter(createFilterFor(query)) : [];
             return results;
         }
 
@@ -844,13 +877,13 @@
             var id = jQuery(e.target).attr('id').replace('select_', '');
             console.log('selected for download: ' + id);
 
-            if ($rootScope.downloadSelection[id] == undefined) {
-                $rootScope.downloadSelection[id] = 1;
+            if ($scope.downloadSelection[id] == undefined) {
+                $scope.downloadSelection[id] = 1;
             } else {
-                delete $rootScope.downloadSelection[id];
+                delete $scope.downloadSelection[id];
             }
 
-            $rootScope.downloadCount = Object.keys($rootScope.downloadSelection).length;
+            $scope.downloadCount = Object.keys($scope.downloadSelection).length;
         }
 
         /* Logout. */
@@ -903,7 +936,7 @@
 
                             $mdDialog.cancel();
 
-                            loggedinInit($rootScope);
+                            loggedinInit();
                         });
                 }, function error(data) {
                     console.log(data);

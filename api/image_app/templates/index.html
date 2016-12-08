@@ -36,6 +36,10 @@
         max-height: 100%;
         max-width: 100%;
     }
+
+    .help-block {
+        color: red;
+    }
     </style>
 </head>
 <body layout="column" ng-controller="photoCtrl as ctrl">
@@ -48,11 +52,32 @@
         <md-content layout-padding>
             <div layout="row">
                 <div flex>
-                    <form class="form-inline" role="form" ng-submit="createLabel()">
+                    <form class="form-inline" name="newlabelform" role="form" ng-submit="createLabel()">
                         <div class="form-group">
-                            <input type="text" ng-model="newLabel" class="form-control" placeholder="New Label" />
+                            <input type="text"
+                                   class="form-control"
+                                   name="label"
+                                   ng-model="newLabel"
+                                   ng-minlength="config.value.min_length"
+                                   ng-maxlength="config.value.max_length"
+                                   ng-pattern="config.value.pattern"
+                                   ng-trim="true"
+                                   autolowercase
+                                   placeholder="New Label" />
+                            <div class="help-block" ng-show="newlabelform.label.$error.minlength">
+                                Label too short, minimum length <span ng-bind="config.value.min_length"></span>.
+                            </div>
+                            <div class="help-block" ng-show="newlabelform.label.$error.maxlength">
+                                Label too long, maximum length <span ng-bind="config.value.max_length"></span>.
+                            </div>
+                            <div class="help-block" ng-show="newlabelform.label.$error.pattern">
+                                Invalid label, please only use characters, no spaces.
+                            </div>
                         </div>
-                        <md-button class="md-raised md-cornered md-primary">create</md-button>
+                        <md-button class="md-raised md-cornered md-primary"
+                                   ng-disabled="newlabelform.$invalid">
+                            create
+                        </md-button>
                     </form>
                 </div>
 
@@ -120,7 +145,7 @@
                     <md-button class="md-primary md-raised md-cornered" ng-click="prevPage()">{{prevPageNum}}</md-button>
                     <md-button class="md-primary md-raised md-cornered">{{currentPage}}</md-button>
                     <md-button class="md-primary md-raised md-cornered" ng-click="nextPage()">{{nextPageNum}}</md-button>
-                    <md-button class="md-primary md-raised" ng-click="showAdvanced($event)">Edit Labels</md-button>
+                    <md-button class="md-primary md-raised" ng-click="launchEditLabels($event)">Edit Labels</md-button>
                 </div>
             </div>
 

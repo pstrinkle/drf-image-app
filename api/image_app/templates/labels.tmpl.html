@@ -17,13 +17,15 @@
         <md-dialog-content layout-padding>
             <p>You can edit or delete labels</p>
             <!-- <md-list-item ng-repeat="label in labels | orderBy"> -->
-            <div ng-repeat="label in labels | orderBy">
+            <div ng-repeat="label in editLabels | orderBy">
                 <md-input-container>
-                    <input id="edit_label_{{ label }}"
-                           value="{{ label }}"
-                           aria-label="edit label: {{ label }}">
+                    <input id="edit_label_{{ label.id }}"
+                           value="{{ label.vale }}"
+                           aria-label="edit label: {{ label.value }}"
+                           ng-model="label.value"
+                           autolowercase />
                 </md-input-container>
-                <md-button class="md-icon-button" ng-click="del(label)">
+                <md-button class="md-icon-button" ng-click="del(label.id)">
                     <md-tooltip>
                         Mark for delete
                     </md-tooltip>
