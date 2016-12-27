@@ -45,7 +45,8 @@ INSTALLED_APPS = [
 #SITE_ID = 1
 
 REST_KNOX = {
-  'USER_SERIALIZER': 'image_app.serializers.LoginUserSerializer',
+    'TOKEN_TTL': 24 * 2,
+    'USER_SERIALIZER': 'image_app.serializers.LoginUserSerializer',
 }
 
 MIDDLEWARE = [
