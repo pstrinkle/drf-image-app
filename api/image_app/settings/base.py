@@ -44,8 +44,10 @@ INSTALLED_APPS = [
 
 #SITE_ID = 1
 
+import datetime
+
 REST_KNOX = {
-    'TOKEN_TTL': 24 * 2,
+    'TOKEN_TTL': datetime.timedelta(days=2),
     'USER_SERIALIZER': 'image_app.serializers.LoginUserSerializer',
 }
 
